@@ -69,8 +69,3 @@ Response:
 - Jordan Kirumira
 - Erisa Emmanuel
 - Victoria Marvis
-=======
-- Jordan
-- Erisa
-- Victoria
->>>>>>> 7c1c6ed79431be50ede343a5693d84344600d22c
