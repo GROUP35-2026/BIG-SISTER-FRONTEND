@@ -100,6 +100,415 @@ function Toast({ message, type = 'success', onClose, showLoader = false, duratio
   );
 }
 
+// ── Confirm Dialog Component (for Admin Tasks) ──────────────────────────────
+function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
+  if (!isOpen) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 10000, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: '#241b35', borderRadius: '16px', padding: '30px', width: '400px', maxWidth: '90%', border: '1px solid #444' }}>
+        <h3 style={{ color: '#fff', margin: '0 0 10px 0' }}>{title}</h3>
+        <p style={{ color: '#b0b0b0', margin: '0 0 20px 0', fontSize: '14px' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} style={{ padding: '8px 20px', borderRadius: '8px', background: 'transparent', border: '1px solid #555', color: '#bbb', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={onConfirm} style={{ padding: '8px 20px', borderRadius: '8px', background: 'linear-gradient(135deg, #9333ea, #e91e63)', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Admin Dashboard Component ────────────────────────────────────────────────
+function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token, backendUrl }) {
+  const [stats, setStats] = useState({ totalUsers: 2841, activeSessions: 384, supportRequests: 47, healthTipsLive: 128 });
+  const [activity, setActivity] = useState([]);
+  const [content, setContent] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [confirmingTask, setConfirmingTask] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+  // Fetch Admin Data
+  useEffect(() => {
+    if (!token) return;
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/api/admin/overview`, { headers: authHeaders });
+        const data = await res.json();
+        if (data.success) { setStats(data.stats); setActivity(data.activity); }
+        
+        const resContent = await fetch(`${backendUrl}/api/admin/content`, { headers: authHeaders });
+        const cData = await resContent.json();
+        if (cData.success) setContent(cData.content);
+
+        const resUsers = await fetch(`${backendUrl}/api/admin/users`, { headers: authHeaders });
+        const uData = await resUsers.json();
+        if (uData.success) setUsers(uData.users);
+      } catch (e) { console.error(e); }
+    };
+    fetchData();
+  }, [token, backendUrl, currentAdminView]);
+
+  const runTask = async (taskName) => {
+    try {
+      await fetch(`${backendUrl}/api/admin/maintenance/${taskName}`, { method: 'POST', headers: authHeaders });
+      setConfirmingTask(null);
+      alert(`${taskName} executed successfully!`);
+    } catch (e) { alert(`Error running ${taskName}`); }
+  };
+
+  const renderContent = () => {
+    switch(currentAdminView) {
+      case 'overview':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>👤 <span style={{ color: '#34d399', fontSize: '12px' }}>+12%</span></div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.totalUsers}</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>Total Users</div>
+              </div>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>🟢 <span style={{ color: '#f472b6', fontSize: '12px' }}>+5%</span></div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.activeSessions}</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>Active Sessions</div>
+              </div>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>🆘 <span style={{ color: '#fbbf24', fontSize: '12px' }}>+23%</span></div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.supportRequests}</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>Support Requests</div>
+              </div>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>💚 <span style={{ color: '#34d399', fontSize: '12px' }}>+8%</span></div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.healthTipsLive}</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>Health Tips Live</div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0 }}>
+              <div style={{ flex: 2, background: '#2c223c', borderRadius: '14px', padding: '20px', overflowY: 'auto' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Recent Activity</h4>
+                {activity.map((a, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid #3d3052' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === 0 ? '#d8b4fe' : '#34d399' }}></span>
+                    <div style={{ flex: 1, color: '#e2e8f0', fontSize: '13px' }}><span style={{ color: '#d8b4fe', fontWeight: 'bold' }}>{a.category || 'System'}</span> · {a.action}</div>
+                    <div style={{ color: '#64748b', fontSize: '11px' }}>{new Date(a.created_at).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Feature Health</h4>
+                {['AI Health Bot', 'Get Support', 'Talk to Counsellor', 'Learn Skills'].map((f, i) => (
+                  <div key={i} style={{ marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#ccc', marginBottom: '4px' }}>
+                      <span>{f}</span>
+                      <span style={{ color: i === 2 ? '#fbbf24' : '#34d399' }}>{i === 2 ? 'Degraded' : 'Operational'}</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#1e162b', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: i === 2 ? '60%' : '100%', height: '100%', background: i === 2 ? '#f59e0b' : '#10b981', borderRadius: '4px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      case 'content':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>💡 Health Tips</button>
+              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>🎓 Learn Skills</button>
+              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>📚 Explore Topics</button>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+              <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
+              <button style={{ padding: '10px 24px', borderRadius: '20px', border: 'none', background: 'linear-gradient(135deg, #e91e63, #9333ea)', color: '#fff', fontWeight: 'bold' }}>+ Add New</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {content.map(c => (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', background: '#2c223c', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
+                  <div style={{ flex: 1, color: '#fff' }}>{c.title}</div>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.category === 'Menstrual' ? '#a78bfa' : '#fcd34d', fontSize: '11px', marginRight: '12px' }}>{c.category}</span>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.status === 'Live' ? '#34d399' : '#fbbf24', fontSize: '11px', marginRight: '12px' }}>{c.status}</span>
+                  <div style={{ color: '#64748b', fontSize: '12px', marginRight: '20px' }}>{new Date(c.created_at).toISOString().slice(0,10)}</div>
+                  <span style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px' }}>✏️</span>
+                  <span style={{ cursor: 'pointer', color: '#94a3b8' }}>🗑️</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'users':
+        return (
+          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+            <div style={{ flex: 1.5, overflowY: 'auto' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                <input type="text" placeholder="Search by name or region..." style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
+                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#2c223c', color: '#ccc', cursor: 'pointer' }}>All</span>
+                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#2c223c', color: '#34d399', cursor: 'pointer' }}>Active</span>
+              </div>
+              {users.map(u => (
+                <div key={u.id} onClick={() => setSelectedUser(u)} style={{ display: 'flex', alignItems: 'center', background: selectedUser?.id === u.id ? '#3d3052' : '#2c223c', borderRadius: '12px', padding: '12px 16px', marginBottom: '8px', cursor: 'pointer' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', marginRight: '12px' }}>{u.full_name?.charAt(0)}</div>
+                  <div style={{ flex: 1, color: '#fff' }}>{u.full_name}</div>
+                  <div style={{ flex: 1, color: '#888' }}>{Math.floor(Math.random() * 5) + 13}</div>
+                  <div style={{ flex: 1, color: '#888' }}>Kampala</div>
+                  <div style={{ flex: 1, color: '#888' }}>{new Date(u.created_at).toISOString().slice(0,10)}</div>
+                  <span style={{ color: '#34d399', fontSize: '12px' }}>Active</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              {selectedUser ? (
+                <div style={{ textAlign: 'center', color: '#fff' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 20px' }}>{selectedUser.full_name?.charAt(0)}</div>
+                  <h3>{selectedUser.full_name}</h3>
+                  <p style={{ color: '#888', margin: '5px 0 20px' }}>{selectedUser.email}</p>
+                  <button style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#fbbf24', color: '#000', fontWeight: 'bold', marginRight: '8px' }}>Flag</button>
+                  <button style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 'bold' }}>Suspend</button>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#64748b' }}>
+                  <div style={{ fontSize: '60px', marginBottom: '10px' }}>👤</div>
+                  <p>Select a user to view details</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      case 'staff':
+        return (
+          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Staff Roster</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {['Dr. Lydia Ouma', 'Nurse Sarah Kato', 'Ruth Namukasa', 'James Okello'].map((s, i) => (
+                  <div key={i} style={{ background: '#2c223c', borderRadius: '14px', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>{s.charAt(0)}</div>
+                      <div>
+                        <div style={{ color: '#fff', fontWeight: 'bold', fontSize: '13px' }}>{s}</div>
+                        <div style={{ color: '#888', fontSize: '11px' }}>Counsellor</div>
+                      </div>
+                      <span style={{ marginLeft: 'auto', width: '10px', height: '10px', borderRadius: '50%', background: i === 2 ? '#64748b' : '#34d399' }}></span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748b', marginBottom: '12px' }}><span>{Math.floor(Math.random()*8)} active cases</span></div>
+                    <button style={{ width: '100%', padding: '6px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#ccc' }}>{i===2 ? 'Notify' : 'Message'}</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <h4 style={{ color: '#fff', margin: 0 }}>Emergency Queue</h4>
+                <span style={{ padding: '2px 10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontSize: '12px' }}>3 Active</span>
+              </div>
+              <div style={{ background: '#1e162b', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ color: '#fff' }}>Grace M.</div>
+                  <div style={{ color: '#ef4444', fontSize: '12px' }}>High</div>
+                </div>
+                <div style={{ color: '#888', fontSize: '12px' }}>Medical Emergency · Entebbe</div>
+                <div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>10:31 AM</div>
+              </div>
+              <div style={{ flex: 1, background: '#1e162b', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
+                <h5 style={{ color: '#ccc', margin: '0 0 10px 0' }}>Live Chat — Grace M.</h5>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  <div style={{ background: '#2c223c', padding: '10px', borderRadius: '12px', marginBottom: '8px', alignSelf: 'flex-start', maxWidth: '80%' }}><span style={{ color: '#fff', fontSize: '13px' }}>I'm in pain, please help</span><div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>10:29 AM</div></div>
+                  <div style={{ background: 'linear-gradient(135deg, #9333ea, #e91e63)', padding: '10px', borderRadius: '12px', marginBottom: '8px', alignSelf: 'flex-end', maxWidth: '80%' }}><span style={{ color: '#fff', fontSize: '13px' }}>Hi Grace, I'm here. Can you describe what's happening?</span></div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <input type="text" placeholder="Type a message..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: 'none', background: '#2c223c', color: '#fff' }} />
+                  <button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold' }}>Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'appearance':
+        return (
+          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+            <div style={{ flex: 1.5, overflowY: 'auto' }}>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Theme Presets</h4>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {['Purple & Pink', 'Teal & Coral', 'Indigo & Gold', 'Rose & Violet'].map(t => (
+                    <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1e162b', padding: '6px 12px', borderRadius: '20px', border: '1px solid #3d3052' }}>
+                      <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: t === 'Purple & Pink' ? '#9333ea' : '#14b8a6' }}></span>
+                      <span style={{ color: '#fff', fontSize: '12px' }}>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>App Text</h4>
+                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>App Name</label><input type="text" defaultValue="Big Sister" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Tagline</label><input type="text" defaultValue="FOR EVERY GIRL" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+                <div><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Welcome Banner</label><input type="text" defaultValue="Welcome back" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+              </div>
+              <button style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold' }}>Save & Publish Changes</button>
+            </div>
+            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <h4 style={{ color: '#fff', margin: '0 0 20px 0' }}>Live Preview</h4>
+              <div style={{ width: '100%', height: '80%', background: '#fff', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '24px', marginBottom: '10px' }}>Big Sister</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>FOR EVERY GIRL</div>
+                <div style={{ marginTop: '20px', padding: '10px 20px', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', borderRadius: '20px' }}>Welcome back</div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'maintenance':
+        return (
+          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+            <div style={{ flex: 1.5, overflowY: 'auto' }}>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div><h4 style={{ color: '#fff', margin: 0 }}>🔧 Maintenance Mode</h4><div style={{ color: '#888', fontSize: '12px' }}>App is live. Enable to take it offline for maintenance.</div></div>
+                <button style={{ padding: '8px 20px', borderRadius: '12px', border: '1px solid #444', background: 'transparent', color: '#fff' }}>Enable</button>
+              </div>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>System Tasks</h4>
+                {['Database Backup', 'Cache Clear', 'AI Model Sync', 'Security Audit Scan'].map((task, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #3d3052' }}>
+                    <div style={{ color: '#fff', fontSize: '14px' }}>{task}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                      <span style={{ color: '#64748b', fontSize: '12px' }}>Last: {new Date().toLocaleString()}</span>
+                      <span style={{ color: '#64748b', fontSize: '12px', background: '#1e162b', padding: '2px 8px', borderRadius: '10px' }}>Idle</span>
+                      <button 
+                        onClick={() => setConfirmingTask(task)}
+                        style={{ padding: '6px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+                      >Run</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+              <h4 style={{ color: '#fff', margin: '0 0 20px 0' }}>Database Metrics</h4>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>Total Records</span><span style={{ color: '#fff' }}>48,219</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>DB Size</span><span style={{ color: '#fff' }}>2.3 GB</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>Active Connections</span><span style={{ color: '#fff' }}>14</span></div>
+              <div style={{ marginTop: 'auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', marginBottom: '4px' }}><span>2.3 GB / 5 GB used</span></div>
+                <div style={{ height: '6px', background: '#1e162b', borderRadius: '4px', overflow: 'hidden' }}><div style={{ width: '46%', height: '100%', background: 'linear-gradient(90deg, #9333ea, #e91e63)', borderRadius: '4px' }}></div></div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'logs':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['All', 'Content', 'Users', 'Backend', 'Support'].map((cat, i) => (
+                  <span key={cat} style={{ padding: '6px 16px', borderRadius: '12px', background: i === 0 ? '#9333ea' : '#2c223c', color: i === 0 ? '#fff' : '#888', fontSize: '12px', cursor: 'pointer' }}>{cat}</span>
+                ))}
+              </div>
+              <button style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#ccc' }}>📁 Archive Session</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
+              <input type="text" placeholder="Search logs..." style={{ width: '100%', padding: '10px', borderRadius: '12px', border: 'none', background: '#1e162b', color: '#fff', marginBottom: '20px' }} />
+              {activity.map((a, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '12px 0', borderBottom: '1px solid #3d3052' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: i % 2 === 0 ? '#d8b4fe' : '#34d399', marginTop: '6px' }}></span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '13px' }}>{a.category || 'System'}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: '10px', background: a.category === 'Users' ? '#fcd34d' : '#9333ea', color: '#000', fontSize: '10px', fontWeight: 'bold' }}>{a.category}</span>
+                    </div>
+                    <div style={{ color: '#94a3b8', fontSize: '13px', marginTop: '2px' }}>{a.action}</div>
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '11px' }}>{new Date(a.created_at).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      default: return <div style={{ color: '#fff' }}>Select a menu item</div>;
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', background: '#150b21', color: '#fff', fontFamily: "'Segoe UI', sans-serif", overflow: 'hidden' }}>
+      <ConfirmDialog 
+        isOpen={!!confirmingTask}
+        title="Confirm Action"
+        message={`Are you sure you want to run "${confirmingTask}"? This may affect system performance.`}
+        onConfirm={() => runTask(confirmingTask)}
+        onCancel={() => setConfirmingTask(null)}
+      />
+      
+      {/* Left Sidebar */}
+      <aside style={{ width: '220px', background: '#1a1227', height: '100%', borderRight: '1px solid #2a1f3d', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+        <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #9333ea, #e91e63)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>BS</div>
+          <div><div style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>Big Sister</div><div style={{ color: '#888', fontSize: '10px' }}>FOR EVERY GIRL</div></div>
+        </div>
+        <div style={{ padding: '0 16px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase' }}>ADMIN MENU</div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
+          {[
+            { key: 'overview', label: 'Overview', icon: '📊' },
+            { key: 'content', label: 'Content Management', icon: '✏️' },
+            { key: 'users', label: 'User Management', icon: '👤', badge: '142' },
+            { key: 'staff', label: 'Support Staff', icon: '💬', badge: '3' },
+            { key: 'appearance', label: 'App Appearance', icon: '✨' },
+            { key: 'maintenance', label: 'Backend Maintenance', icon: '⚙️' },
+            { key: 'logs', label: 'Activity Log', icon: '📋' },
+          ].map(item => (
+            <div 
+              key={item.key} 
+              onClick={() => setCurrentAdminView(item.key)}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', 
+                borderRadius: '10px', cursor: 'pointer', 
+                background: currentAdminView === item.key ? 'linear-gradient(90deg, #3a1f55, transparent)' : 'transparent',
+                marginBottom: '4px' 
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>{item.icon}</span>
+              <span style={{ color: currentAdminView === item.key ? '#d8b4fe' : '#94a3b8', fontSize: '13px', fontWeight: currentAdminView === item.key ? 'bold' : 'normal' }}>{item.label}</span>
+              {item.badge && <span style={{ marginLeft: 'auto', background: '#9333ea', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px' }}>{item.badge}</span>}
+            </div>
+          ))}
+        </div>
+        <div onClick={onLogout} style={{ padding: '16px 20px', borderTop: '1px solid #2a1f3d', color: '#64748b', cursor: 'pointer', fontSize: '13px' }}>➜ Logout</div>
+      </aside>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <header style={{ height: '64px', background: '#1a1227', borderBottom: '1px solid #2a1f3d', display: 'flex', alignItems: 'center', padding: '0 24px', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ color: '#fff', fontSize: '18px', fontWeight: 'bold' }}>ADMIN CONSOLE</span>
+            <span style={{ color: '#34d399', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#34d399' }}></span> System Online</span>
+          </div>
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>AD</div>
+        </header>
+        <div style={{ flex: 1, overflow: 'hidden', padding: '24px' }}>
+          <h2 style={{ margin: '0 0 6px 0', color: '#fff' }}>
+            {currentAdminView.charAt(0).toUpperCase() + currentAdminView.slice(1)}
+          </h2>
+          <div style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
+            {currentAdminView === 'overview' && 'Tuesday, July 8 2026 — Welcome back, Admin'}
+            {currentAdminView === 'content' && 'Add, edit, update, and remove app content across all features'}
+            {currentAdminView === 'users' && 'View, manage, and moderate all registered girls'}
+            {currentAdminView === 'staff' && 'Manage staff, respond to emergencies, and monitor live chats'}
+            {currentAdminView === 'appearance' && 'Customise how the app looks for all users'}
+            {currentAdminView === 'maintenance' && 'Run maintenance tasks, manage configuration, and monitor the database'}
+            {currentAdminView === 'logs' && 'Full audit trail of all admin actions and system events'}
+          </div>
+          <div style={{ height: 'calc(100% - 70px)' }}>
+            {renderContent()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Terms & Conditions View ────────────────────────────────────────────────────
 function TermsView({ onBack }) {
   return (
@@ -109,7 +518,7 @@ function TermsView({ onBack }) {
           <button onClick={onBack} style={{ background: '#F3E8FF', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', fontSize: '16px', color: '#9023F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#9023F0' }}>Terms & Conditions</h2>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
+        <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }} className="no-scrollbar">
           {[
             { title: '1. Privacy & Confidentiality', body: 'All personal information you share on Big Sister is strictly confidential. We never share your identity, health data, or usage history with third parties, schools, parents, or government bodies without your explicit consent.' },
             { title: '2. Who Can Use Big Sister', body: 'Big Sister is designed for teenage girls and young women aged 12–24 in Uganda. By registering, you confirm that you are within this age range or have the support of a trusted guardian.' },
@@ -139,13 +548,14 @@ function TermsView({ onBack }) {
 
 export default function App() {
   const [currentView, setCurrentView]         = useState('landing');
+  const [currentAdminView, setCurrentAdminView] = useState('overview');
   const [showPassword, setShowPassword]       = useState(false);
   const [language]                            = useState('English');
   const [showGooglePopup, setShowGooglePopup] = useState(false);
   const [agreeToTerms, setAgreeToTerms]       = useState(false);
 
   // Toast state
-  const [toast, setToast] = useState(null); // { message, type, showLoader }
+  const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success', showLoader = false, duration = 4000) => {
     setToast({ message, type, showLoader, duration });
@@ -177,7 +587,7 @@ export default function App() {
   const [bookedSessions, setBookedSessions]         = useState([]);
 
   // ── Get Support feature state ─────────────────────────────────────────────
-  const [supportView, setSupportView]               = useState('list');   // 'list' | 'detail' | 'myrequests'
+  const [supportView, setSupportView]               = useState('list');
   const [selectedSupport, setSelectedSupport]       = useState(null);
   const [supportFirstName, setSupportFirstName]     = useState('');
   const [supportSchoolName, setSupportSchoolName]   = useState('');
@@ -421,7 +831,6 @@ export default function App() {
       const res  = await fetch(`${BACKEND_URL}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fullName: regFullName, email: regEmail, password: regPassword, agreeToTerms }) });
       const data = await res.json();
       if (data.success) {
-        // Show success toast with loader, then auto sign-in
         const savedEmail    = regEmail;
         const savedPassword = regPassword;
         setRegFullName(''); setRegEmail(''); setRegPassword(''); setRegConfirmPassword(''); setAgreeToTerms(false);
@@ -435,7 +844,11 @@ export default function App() {
               setAuthToken(d2.token); setCurrentUser(d2.user);
               await fetchBookedSessions(d2.token);
               await fetchSupportRequests(d2.token);
-              setCurrentView('dashboard');
+              if (d2.user.role === 'admin') {
+                setCurrentView('admin');
+              } else {
+                setCurrentView('dashboard');
+              }
             } else { setCurrentView('signin'); }
           } catch { setCurrentView('signin'); }
         }, 4000);
@@ -455,7 +868,11 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
-        setCurrentView('dashboard');
+        if (data.user.role === 'admin') {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('dashboard');
+        }
       } else { showToast(`Login failed: ${data.message}`, 'error'); }
     } catch (err) { console.error('Signin error:', err); showToast('Could not connect to the server.', 'error'); }
   };
@@ -471,7 +888,11 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
-        setCurrentView('dashboard');
+        if (data.user.role === 'admin') {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('dashboard');
+        }
       } else { showToast(`Google sign-in failed: ${data.message}`, 'error'); }
     } catch (err) { console.error('Google sync error:', err); showToast('Error signing in with Google.', 'error'); }
   };
@@ -491,7 +912,7 @@ export default function App() {
     { key: 'dashboard',  icon: '🏠', label: 'Home',                onClick: () => setCurrentView('dashboard') },
     { key: 'aibot',      icon: '💬', label: 'Ask AI Health Bot',   onClick: () => showToast('AI Health Bot coming soon!', 'info') },
     { key: 'support',    icon: '🤝', label: 'Get Support',         onClick: () => { openSupportHub(); setCurrentView('support'); } },
-    { key: 'counsellor', icon: '🧑\u200d⚕️', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
+    { key: 'counsellor', icon: '🧑‍⚕️', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
     { key: 'skills',     icon: '🎓', label: 'Learn Skills',        onClick: () => showToast('Skills & learning portal coming soon!', 'info') },
     { key: 'emergency',  icon: '🚨', label: 'Emergency Help',      onClick: () => showToast('Locating nearest clinic networks…', 'info') },
     { key: 'track',      icon: '📊', label: 'Track Health',        onClick: () => showToast('Health tracker coming soon!', 'info') },
@@ -525,11 +946,9 @@ export default function App() {
   const styles = {
     container: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#FFF8FD', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', margin: 0, padding: 0 },
 
-    // App shell (sidebar + main column)
     appShell:    { display: 'flex', width: '100%', flex: 1, minHeight: 0, boxSizing: 'border-box', overflow: 'hidden' },
     mainColumn:  { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
-    // Sidebar
     sidebar:            { width: '256px', minWidth: '256px', height: '100%', backgroundColor: '#FFFFFF', borderRight: '1px solid #F0E4F7', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' },
     sidebarNavScroll:    { flex: 1, padding: '4px 14px 10px 14px', boxSizing: 'border-box' },
     sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: '18px 10px 8px 10px' },
@@ -552,7 +971,6 @@ export default function App() {
     userProfileTag:  { fontSize: '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '8px' },
     contentBody:     { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
-    // Landing
     landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF' },
     landingHeroSection:   { display: 'flex', width: '100%', flex: '1.2', backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.85) 15%, rgba(255,255,255,0) 35%), url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'flex-start', padding: '20px 60px', boxSizing: 'border-box', position: 'relative' },
     landingHeroLeft:      { width: '100%', maxWidth: '550px', textAlign: 'left', zIndex: 2 },
@@ -566,7 +984,6 @@ export default function App() {
     landingCardTitle:     { fontSize: '15px', fontWeight: '700', color: themeColors.textDark, marginBottom: '6px' },
     landingCardDesc:      { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0 },
 
-    // Auth
     authCardWrapper: { display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'center', padding: '20px 16px', boxSizing: 'border-box' },
     authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: '24px', textAlign: 'center', overflow: 'hidden' },
     authCardTitle:   { fontSize: '20px', fontWeight: '700', color: themeColors.textDark, margin: '0 0 16px 0', letterSpacing: '-0.3px' },
@@ -578,8 +995,7 @@ export default function App() {
     overlay:  { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
     popupBox: { backgroundColor: '#FFFFFF', borderRadius: '16px', width: '90%', maxWidth: '360px', padding: '24px', boxShadow: '0px 8px 24px rgba(0,0,0,0.3)', textAlign: 'left', boxSizing: 'border-box' },
 
-    // Dashboard
-    dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden', boxSizing: 'border-box' },
+    dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
     dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
     dashboardWelcomeText:  { fontSize: '16px', fontWeight: '700', letterSpacing: '-0.2px' },
     dashboardMainView:     { padding: '16px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%', flex: 1, minHeight: 0 },
@@ -592,14 +1008,12 @@ export default function App() {
     featureTitle: { fontSize: '14px', fontWeight: '700', marginBottom: '4px' },
     featureDesc:  { fontSize: '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
 
-    // Quick Access
     quickAccessSection:   { width: '100%', boxSizing: 'border-box', flex: 1, minHeight: 0 },
     quickAccessTitle:     { fontSize: '14px', fontWeight: '800', color: themeColors.purple, margin: '0 0 10px 0' },
     quickAccessRow:        { display: 'flex', gap: '12px', flexWrap: 'wrap' },
     quickAccessPill:       { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #F0E4F7', borderRadius: '14px', padding: '11px 16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#333333', flex: '1 1 180px', minWidth: '180px', transition: 'transform 0.15s, box-shadow 0.15s' },
     quickAccessIconWrap:   (bg) => ({ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }),
 
-    // Counsellor
     counsellorWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FBF2FC' },
     counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
     counsellorBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
@@ -626,14 +1040,12 @@ export default function App() {
     groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0' },
     joinGroupBtn:           { width: '100%', backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer' },
 
-    // Chat
     chatBody:           { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
     chatAvatarLarge:    { width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '42px', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
     chatCounsellorName: { fontSize: '17px', fontWeight: '800', color: themeColors.purple, margin: '0 0 2px 0' },
     chatCounsellorRole: { fontSize: '13px', color: '#A56BC4', margin: '0 0 24px 0', fontWeight: '600' },
     chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px' },
 
-    // Booking
     bookingBody:             { padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
     bookingCounsellorBanner: { borderRadius: '18px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', color: '#FFFFFF' },
     bookingAvatarCircle:     { width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 },
@@ -650,7 +1062,6 @@ export default function App() {
     toggleSwitchKnob:  (on) => ({ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#FFFFFF', position: 'absolute', top: '3px', left: on ? '21px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }),
     confirmBookingBtn: (ok) => ({ width: '100%', backgroundColor: ok ? themeColors.purple : '#EADCF5', color: ok ? '#FFFFFF' : '#B89DC9', border: 'none', borderRadius: '24px', padding: '14px', fontSize: '14.5px', fontWeight: '800', cursor: ok ? 'pointer' : 'not-allowed' }),
 
-    // Confirmation
     confirmationBody:         { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
     confirmationCard:         { backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '40px 32px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box' },
     confirmationCheckCircle:  { width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', fontSize: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' },
@@ -660,7 +1071,6 @@ export default function App() {
     confirmationReminderText: { fontSize: '12.5px', color: '#999999', margin: '0 0 26px 0' },
     backToCounsellorsBtn:     { width: '100%', backgroundColor: themeColors.purple, color: '#FFFFFF', border: 'none', borderRadius: '24px', padding: '13px', fontSize: '14px', fontWeight: '800', cursor: 'pointer' },
 
-    // My Sessions
     mySessionsEmptyState: { textAlign: 'center', padding: '60px 32px', color: '#999999' },
     sessionCard:          { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' },
     sessionCardTopRow:    { display: 'flex', alignItems: 'center', gap: '12px' },
@@ -679,7 +1089,6 @@ export default function App() {
     deleteConfirmYesBtn:  { backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', borderRadius: '12px', padding: '7px 12px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer' },
     deleteConfirmNoBtn:   { backgroundColor: '#FFFFFF', color: '#666666', border: '1px solid #E0E0E0', borderRadius: '12px', padding: '7px 12px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer' },
 
-    // Support
     supportWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#EEF2FF' },
     supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
     supportBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#3B82F6', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
@@ -764,7 +1173,7 @@ export default function App() {
     };
 
     return (
-      <div style={styles.supportWrapper}>
+      <div style={styles.supportWrapper} className="no-scrollbar">
         <div style={styles.supportHeaderBar}>
           <button style={styles.supportBackBtn} onClick={handleSupportBack}>←</button>
           <div>
@@ -778,7 +1187,6 @@ export default function App() {
           )}
         </div>
 
-        {/* SUPPORT LIST */}
         {supportView === 'list' && (
           <div style={styles.supportListBody}>
             {supportCategories.map(cat => (
@@ -794,17 +1202,14 @@ export default function App() {
           </div>
         )}
 
-        {/* SUPPORT DETAIL */}
         {supportView === 'detail' && cat && (
           <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
-            {/* Hero banner */}
             <div style={{ borderRadius: '18px', background: cat.gradient, padding: '28px 24px', color: '#FFFFFF' }}>
               <div style={{ fontSize: '32px', marginBottom: '10px' }}>{cat.emoji}</div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '800' }}>{cat.label}</h3>
               <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{cat.subtitle}</p>
             </div>
 
-            {/* What's included */}
             <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13px', fontWeight: '800', color: cat.color }}>What's included:</p>
               {cat.includes.map((item, i) => (
@@ -817,13 +1222,11 @@ export default function App() {
               ))}
             </div>
 
-            {/* Eligibility */}
             <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '16px 20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
               <p style={{ margin: '0 0 4px 0', fontSize: '11px', fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Eligibility</p>
               <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#1A1A1A' }}>{cat.eligibility}</p>
             </div>
 
-            {/* Request form */}
             <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Request this support:</p>
               <input type="text" placeholder="Your first name" value={supportFirstName} onChange={e => setSupportFirstName(e.target.value)} style={{ ...styles.inputField, marginBottom: '10px', display: 'block' }} />
@@ -839,7 +1242,6 @@ export default function App() {
           </div>
         )}
 
-        {/* MY REQUESTS */}
         {supportView === 'myrequests' && (
           <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
             {supportRequests.length === 0 ? (
@@ -892,7 +1294,7 @@ export default function App() {
     };
 
     return (
-      <div style={styles.counsellorWrapper}>
+      <div style={styles.counsellorWrapper} className="no-scrollbar">
         <div style={styles.counsellorHeaderBar}>
           <button style={styles.counsellorBackBtn} onClick={handleBack}>←</button>
           <div>
@@ -1160,17 +1562,14 @@ export default function App() {
             </section>
             <section style={styles.landingGridSection}>
               <div style={styles.landingInfoCard}>
-            
                 <h4 style={styles.landingCardTitle}>Your Privacy, Always</h4>
                 <p style={styles.landingCardDesc}>Everything you do here stays between you and Big Sister. No names shared, no data sold — ever.</p>
               </div>
               <div style={styles.landingInfoCard}>
-                
                 <h4 style={styles.landingCardTitle}>Real Support, Not Just Advice</h4>
                 <p style={styles.landingCardDesc}>Request sanitary pads, school fees help, meals, and mental health support — from partners who actually provide them.</p>
               </div>
               <div style={styles.landingInfoCard}>
-                
                 <h4 style={styles.landingCardTitle}>Talk to Someone Who Gets It</h4>
                 <p style={styles.landingCardDesc}>Book a private session with a counsellor who understands the pressures girls in Uganda face every day.</p>
               </div>
@@ -1287,7 +1686,7 @@ export default function App() {
 
         {/* DASHBOARD */}
         {currentView === 'dashboard' && (
-          <div style={styles.dashboardWrapper}>
+          <div style={styles.dashboardWrapper} className="no-scrollbar">
             <div style={styles.dashboardWelcomeBar}>
               <div style={styles.dashboardWelcomeText}>Welcome back, {currentUser?.fullName?.split(' ')[0] || 'there'} 👋</div>
             </div>
@@ -1366,12 +1765,23 @@ export default function App() {
         />
       )}
 
-      <div style={styles.appShell}>
-        {currentUser && renderSidebar()}
-        <div style={styles.mainColumn}>
-          {mainColumnContent}
+      {/* Conditional Routing: Admin vs Public/User */}
+      {currentView === 'admin' ? (
+        <AdminDashboard 
+          currentAdminView={currentAdminView} 
+          setCurrentAdminView={setCurrentAdminView} 
+          onLogout={handleLogout}
+          token={authToken}
+          backendUrl={BACKEND_URL}
+        />
+      ) : (
+        <div style={styles.appShell}>
+          {currentUser && renderSidebar()}
+          <div style={styles.mainColumn}>
+            {mainColumnContent}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* GOOGLE POPUP */}
       {showGooglePopup && (
@@ -1383,7 +1793,7 @@ export default function App() {
             </div>
             <p style={{ fontSize: '14px', color: '#202124', margin: '0 0 4px 0', fontWeight: '500' }}>Choose an account</p>
             <p style={{ fontSize: '12px', color: '#5f6368', margin: '0 0 16px 0' }}>to continue to <span style={{ color: themeColors.purple, fontWeight: '600' }}>Big Sister</span></p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '240px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '240px', overflowY: 'auto' }} className="no-scrollbar">
               {[
                 { name: 'Jordan Kirumira',   email: 'joriana800@gmail.com',       initials: 'JK', color: '#E61B9B' },
                 { name: 'Jordan',            email: 'jordankir449@gmail.com',     initials: 'J',  color: '#7614EC' },
