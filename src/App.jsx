@@ -31,6 +31,26 @@ function BrandLogo({ onClick }) {
   );
 }
 
+// ── Compact sidebar wordmark (small pink pill "BS" + label) ─────────────────
+function SidebarBrand({ onClick }) {
+  return (
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '18px 20px' }}>
+      <div style={{
+        width: '42px', height: '42px', borderRadius: '13px',
+        background: 'linear-gradient(135deg, #FF6EB4 0%, #C040A0 55%, #5B0FA8 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        boxShadow: '0 4px 10px rgba(144,35,240,0.25)'
+      }}>
+        <span style={{ fontFamily: "'Arial Black',sans-serif", fontWeight: 900, fontSize: '15px', color: '#FFFFFF', letterSpacing: '-0.5px' }}>BS</span>
+      </div>
+      <div>
+        <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1A1A1A', lineHeight: 1.1 }}>Big Sister</div>
+        <div style={{ fontSize: '9px', fontWeight: 700, color: '#B45AC9', letterSpacing: '1.2px', marginTop: '2px' }}>FOR EVERY GIRL</div>
+      </div>
+    </div>
+  );
+}
+
 // ── Toast Notification Component ─────────────────────────────────────────────
 function Toast({ message, type = 'success', onClose, showLoader = false, duration = 4000 }) {
   const [progress, setProgress] = useState(100);
@@ -465,11 +485,64 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
+  // SIDEBAR NAVIGATION (logged-in layout)
+  // ══════════════════════════════════════════════════════════════════════════
+  const primaryNavItems = [
+    { key: 'dashboard',  icon: '🏠', label: 'Home',                onClick: () => setCurrentView('dashboard') },
+    { key: 'aibot',      icon: '💬', label: 'Ask AI Health Bot',   onClick: () => showToast('AI Health Bot coming soon!', 'info') },
+    { key: 'support',    icon: '🤝', label: 'Get Support',         onClick: () => { openSupportHub(); setCurrentView('support'); } },
+    { key: 'counsellor', icon: '🧑\u200d⚕️', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
+    { key: 'skills',     icon: '🎓', label: 'Learn Skills',        onClick: () => showToast('Skills & learning portal coming soon!', 'info') },
+    { key: 'emergency',  icon: '🚨', label: 'Emergency Help',      onClick: () => showToast('Locating nearest clinic networks…', 'info') },
+    { key: 'track',      icon: '📊', label: 'Track Health',        onClick: () => showToast('Health tracker coming soon!', 'info') },
+    { key: 'topics',     icon: '📚', label: 'Explore Topics',      onClick: () => showToast('Loading educational content library…', 'info') },
+  ];
+
+  const resourceNavItems = [
+    { key: 'library',   icon: '📖', label: 'Library',   onClick: () => showToast('Library coming soon!', 'info') },
+    { key: 'saved',     icon: '🔖', label: 'Saved',      onClick: () => showToast('Saved items coming soon!', 'info') },
+    { key: 'reminders', icon: '🔔', label: 'Reminders',  onClick: () => showToast('Reminders coming soon!', 'info') },
+    { key: 'downloads', icon: '⬇️', label: 'Downloads',  onClick: () => showToast('Downloads coming soon!', 'info') },
+  ];
+
+  const accountNavItems = [
+    { key: 'profile',  icon: '👤', label: 'My Profile', onClick: openProfile },
+    { key: 'settings', icon: '⚙️', label: 'Settings',   onClick: () => showToast('Settings coming soon!', 'info') },
+    { key: 'logout',   icon: '↪️', label: 'Logout',     onClick: handleLogout },
+  ];
+
+  const isNavItemActive = (key) => {
+    if (key === 'dashboard') return currentView === 'dashboard';
+    if (key === 'support') return currentView === 'support';
+    if (key === 'counsellor') return currentView === 'counsellor';
+    if (key === 'profile') return currentView === 'profile';
+    return false;
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
   // STYLES
   // ══════════════════════════════════════════════════════════════════════════
   const styles = {
     container: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#FFF8FD', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', margin: 0, padding: 0 },
-    navbar: { width: '100%', height: '64px', backgroundColor: '#FFFFFF', padding: '0 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', borderBottom: '1px solid #EAEAEA', zIndex: 50 },
+
+    // App shell (sidebar + main column)
+    appShell:    { display: 'flex', width: '100%', flex: 1, minHeight: 0, boxSizing: 'border-box', overflow: 'hidden' },
+    mainColumn:  { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', boxSizing: 'border-box', overflow: 'hidden' },
+
+    // Sidebar
+    sidebar:            { width: '256px', minWidth: '256px', height: '100%', backgroundColor: '#FFFFFF', borderRight: '1px solid #F0E4F7', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' },
+    sidebarNavScroll:    { flex: 1, padding: '4px 14px 10px 14px', boxSizing: 'border-box' },
+    sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: '18px 10px 8px 10px' },
+    sidebarNavItem:      { display: 'flex', alignItems: 'center', gap: '11px', padding: '9px 12px', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600', color: '#5B5B5B', cursor: 'pointer', marginBottom: '2px', transition: 'background-color 0.15s, color 0.15s' },
+    sidebarNavItemActive:{ backgroundColor: '#F3E8FF', color: '#9023F0', fontWeight: '800' },
+    sidebarNavIcon:      { fontSize: '15px', width: '18px', textAlign: 'center', flexShrink: 0 },
+    sidebarDivider:      { height: '1px', backgroundColor: '#F0E4F7', margin: '10px 10px' },
+    sidebarBottomCard:   { margin: '10px 14px 16px 14px', backgroundColor: '#FDEBF5', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', boxSizing: 'border-box' },
+    sidebarBottomIcon:   { fontSize: '18px', flexShrink: 0 },
+    sidebarBottomTitle:  { fontSize: '12.5px', fontWeight: '800', color: '#C0288E', margin: 0 },
+    sidebarBottomDesc:   { fontSize: '11px', color: '#B36FA0', margin: '2px 0 0 0', fontWeight: '500', lineHeight: '1.35' },
+
+    navbar: { width: '100%', height: '64px', backgroundColor: '#FFFFFF', padding: '0 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', borderBottom: '1px solid #EAEAEA', zIndex: 50, flexShrink: 0 },
     navBrandGroup:   { display: 'flex', alignItems: 'center', gap: '30px' },
     navBrandText:    { fontSize: '24px', fontWeight: '800', color: themeColors.magenta, cursor: 'pointer' },
     navLinkItem:     { fontSize: '14px', fontWeight: '600', color: '#A155B9', textDecoration: 'none', cursor: 'pointer', marginRight: '20px' },
@@ -477,7 +550,7 @@ export default function App() {
     navLoginBtn:     { background: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '20px', padding: '6px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
     navRegisterBtn:  { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: '7px 22px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
     userProfileTag:  { fontSize: '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '8px' },
-    contentBody:     { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
+    contentBody:     { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
     // Landing
     landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF' },
@@ -506,18 +579,25 @@ export default function App() {
     popupBox: { backgroundColor: '#FFFFFF', borderRadius: '16px', width: '90%', maxWidth: '360px', padding: '24px', boxShadow: '0px 8px 24px rgba(0,0,0,0.3)', textAlign: 'left', boxSizing: 'border-box' },
 
     // Dashboard
-    dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
-    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: '14px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF' },
-    dashboardWelcomeText:  { fontSize: '18px', fontWeight: '700', letterSpacing: '-0.2px' },
-    dashboardMainView:     { padding: '24px 40px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%' },
-    tipOfTheDayCard:       { width: '100%', backgroundColor: '#FA539B', borderRadius: '16px', padding: '16px 20px', color: '#FFFFFF', boxSizing: 'border-box', marginBottom: '28px', display: 'flex', alignItems: 'flex-start', gap: '12px', boxShadow: '0 4px 15px rgba(250,83,155,0.15)' },
-    tipTitle:              { fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, marginBottom: '3px' },
-    tipBody:               { fontSize: '14px', fontWeight: '500', margin: 0, lineHeight: '1.4' },
-    featuresGridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', width: '100%', boxSizing: 'border-box', paddingBottom: '30px' },
-    featureCard:  { borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: '140px' },
-    featureIcon:  { fontSize: '24px', marginBottom: '12px', display: 'block' },
-    featureTitle: { fontSize: '15px', fontWeight: '700', marginBottom: '6px' },
-    featureDesc:  { fontSize: '12px', lineHeight: '1.4', margin: 0, fontWeight: '500' },
+    dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden', boxSizing: 'border-box' },
+    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
+    dashboardWelcomeText:  { fontSize: '16px', fontWeight: '700', letterSpacing: '-0.2px' },
+    dashboardMainView:     { padding: '16px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%', flex: 1, minHeight: 0 },
+    tipOfTheDayCard:       { width: '100%', backgroundColor: '#FA539B', borderRadius: '14px', padding: '10px 18px', color: '#FFFFFF', boxSizing: 'border-box', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(250,83,155,0.15)', flexShrink: 0 },
+    tipTitle:              { fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, marginBottom: '2px' },
+    tipBody:               { fontSize: '13px', fontWeight: '500', margin: 0, lineHeight: '1.3' },
+    featuresGridContainer: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 },
+    featureCard:  { borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: '110px' },
+    featureIcon:  { fontSize: '20px', marginBottom: '8px', display: 'block' },
+    featureTitle: { fontSize: '14px', fontWeight: '700', marginBottom: '4px' },
+    featureDesc:  { fontSize: '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
+
+    // Quick Access
+    quickAccessSection:   { width: '100%', boxSizing: 'border-box', flex: 1, minHeight: 0 },
+    quickAccessTitle:     { fontSize: '14px', fontWeight: '800', color: themeColors.purple, margin: '0 0 10px 0' },
+    quickAccessRow:        { display: 'flex', gap: '12px', flexWrap: 'wrap' },
+    quickAccessPill:       { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #F0E4F7', borderRadius: '14px', padding: '11px 16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#333333', flex: '1 1 180px', minWidth: '180px', transition: 'transform 0.15s, box-shadow 0.15s' },
+    quickAccessIconWrap:   (bg) => ({ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }),
 
     // Counsellor
     counsellorWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FBF2FC' },
@@ -612,6 +692,65 @@ export default function App() {
     supportCardSubtitle:   { fontSize: '12px', color: '#888888', margin: 0, fontWeight: '500' },
     supportLearnMore:      { fontSize: '12.5px', fontWeight: '700', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' },
   };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SIDEBAR RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderSidebar = () => (
+    <aside style={styles.sidebar} className="no-scrollbar">
+      <SidebarBrand onClick={() => setCurrentView('dashboard')} />
+      <div style={styles.sidebarNavScroll}>
+        {primaryNavItems.map(item => (
+          <div
+            key={item.key}
+            style={{ ...styles.sidebarNavItem, ...(isNavItemActive(item.key) ? styles.sidebarNavItemActive : {}) }}
+            onClick={item.onClick}
+            onMouseEnter={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
+            onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+
+        <div style={styles.sidebarSectionLabel}>Tools & Resources</div>
+        {resourceNavItems.map(item => (
+          <div
+            key={item.key}
+            style={styles.sidebarNavItem}
+            onClick={item.onClick}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+
+        <div style={styles.sidebarSectionLabel}>Account</div>
+        {accountNavItems.map(item => (
+          <div
+            key={item.key}
+            style={{ ...styles.sidebarNavItem, ...(isNavItemActive(item.key) ? styles.sidebarNavItemActive : {}) }}
+            onClick={item.onClick}
+            onMouseEnter={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
+            onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={styles.sidebarBottomCard}>
+        <span style={styles.sidebarBottomIcon}>👑</span>
+        <div>
+          <p style={styles.sidebarBottomTitle}>You're amazing!</p>
+          <p style={styles.sidebarBottomDesc}>Take care of yourself today. 💗</p>
+        </div>
+      </div>
+    </aside>
+  );
 
   // ══════════════════════════════════════════════════════════════════════════
   // SUPPORT FEATURE RENDERER
@@ -966,27 +1105,24 @@ export default function App() {
   // ══════════════════════════════════════════════════════════════════════════
   // MAIN RENDER
   // ══════════════════════════════════════════════════════════════════════════
-  return (
-    <div style={styles.container}>
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          showLoader={toast.showLoader}
-          duration={toast.duration}
-          onClose={() => setToast(null)}
-        />
-      )}
-
+  const mainColumnContent = (
+    <>
       <header style={styles.navbar}>
         <div style={styles.navBrandGroup}>
-          <BrandLogo onClick={() => setCurrentView(currentUser ? 'dashboard' : 'landing')} />
-          <nav>
-            <span style={styles.navLinkItem} onClick={() => { setCurrentView(currentUser ? 'dashboard' : 'landing'); openCounsellorHub(); }}>Home</span>
-            <span style={styles.navLinkItem} onClick={() => setCurrentView('about')}>About</span>
-          </nav>
+          {currentUser ? (
+            <nav>
+              <span style={styles.navLinkItem} onClick={() => setCurrentView('dashboard')}>Home</span>
+              <span style={styles.navLinkItem} onClick={() => setCurrentView('about')}>About</span>
+            </nav>
+          ) : (
+            <>
+              <BrandLogo onClick={() => setCurrentView('landing')} />
+              <nav>
+                <span style={styles.navLinkItem} onClick={() => setCurrentView('landing')}>Home</span>
+                <span style={styles.navLinkItem} onClick={() => setCurrentView('about')}>About</span>
+              </nav>
+            </>
+          )}
         </div>
         <div style={styles.navAuthButtons}>
           {currentUser ? (
@@ -1172,6 +1308,30 @@ export default function App() {
                 <div style={{ ...styles.featureCard, backgroundColor: '#FCE7F3' }} onClick={() => showToast('Health tracker coming soon!', 'info')}><span style={styles.featureIcon}>📊</span><h3 style={{ ...styles.featureTitle, color: '#DB2777' }}>Track Health</h3><p style={{ ...styles.featureDesc, color: '#9D174D' }}>Monitor your cycle, symptoms, and health trends</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#E0F2FE' }} onClick={() => showToast('Loading educational content library…', 'info')}><span style={styles.featureIcon}>📚</span><h3 style={{ ...styles.featureTitle, color: '#0284C7' }}>Explore Topics</h3><p style={{ ...styles.featureDesc, color: '#075985' }}>Learn about your body, health, and safe decisions</p></div>
               </div>
+
+              <div style={styles.quickAccessSection}>
+                <h3 style={styles.quickAccessTitle}>Quick Access</h3>
+                <div style={styles.quickAccessRow}>
+                  {[
+                    { icon: '🩸', label: 'Period Tracker', bg: '#FCE0EC', color: '#DB2777', onClick: () => showToast('Period tracker coming soon!', 'info') },
+                    { icon: '💗', label: 'Symptom Checker', bg: '#FDE4EA', color: '#E11D48', onClick: () => showToast('Symptom checker coming soon!', 'info') },
+                    { icon: '📍', label: 'Nearby Services', bg: '#DBEAFE', color: '#2563EB', onClick: () => showToast('Locating nearby services…', 'info') },
+                    { icon: '👥', label: 'Community', bg: '#F3E8FF', color: '#9333EA', onClick: () => showToast('Community coming soon!', 'info') },
+                    { icon: '🏅', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => showToast('Certificates coming soon!', 'info') },
+                  ].map(item => (
+                    <div
+                      key={item.label}
+                      style={styles.quickAccessPill}
+                      onClick={item.onClick}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 18px rgba(0,0,0,0.07)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,0,0,0.02)'; }}
+                    >
+                      <div style={styles.quickAccessIconWrap(item.bg)}>{item.icon}</div>
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1184,6 +1344,33 @@ export default function App() {
 
         {/* MY PROFILE */}
         {currentView === 'profile' && renderProfileFeature()}
+      </div>
+    </>
+  );
+
+  return (
+    <div style={styles.container}>
+      <style>{`
+        .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          showLoader={toast.showLoader}
+          duration={toast.duration}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <div style={styles.appShell}>
+        {currentUser && renderSidebar()}
+        <div style={styles.mainColumn}>
+          {mainColumnContent}
+        </div>
       </div>
 
       {/* GOOGLE POPUP */}
