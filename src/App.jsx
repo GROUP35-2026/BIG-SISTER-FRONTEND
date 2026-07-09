@@ -118,46 +118,91 @@ function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
 }
 
 // ── Admin Dashboard Component ────────────────────────────────────────────────
-function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token, backendUrl }) {
-  const [stats, setStats] = useState({ totalUsers: 2841, activeSessions: 384, supportRequests: 47, healthTipsLive: 128 });
+function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token, backendUrl, showToast }) {
+  const [stats, setStats] = useState({ totalUsers: 0, activeSessions: 0, supportRequests: 0, healthTipsLive: 0 });
   const [activity, setActivity] = useState([]);
   const [content, setContent] = useState([]);
   const [users, setUsers] = useState([]);
+  const [logs, setLogs] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmingTask, setConfirmingTask] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showContentModal, setShowContentModal] = useState(false);
+  const [editingContent, setEditingContent] = useState(null);
+  const [contentForm, setContentForm] = useState({ title: '', category: 'Health Tips', status: 'Draft', body: '' });
+  const [appearanceForm, setAppearanceForm] = useState({ primary: '#9333ea', accent: '#ec4899', background: '#f8f0ff', appName: 'Big Sister', tagline: 'FOR EVERY GIRL', welcomeBanner: 'Welcome back' });
 
   const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
   // Fetch Admin Data
-  useEffect(() => {
-    if (!token) return;
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${backendUrl}/api/admin/overview`, { headers: authHeaders });
-        const data = await res.json();
-        if (data.success) { setStats(data.stats); setActivity(data.activity); }
-        
-        const resContent = await fetch(`${backendUrl}/api/admin/content`, { headers: authHeaders });
-        const cData = await resContent.json();
-        if (cData.success) setContent(cData.content);
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/api/admin/overview`, { headers: authHeaders });
+      const data = await res.json(); 
+      if (data.success) { setStats(data.stats); setActivity(data.activity); }
+      
+      const resContent = await fetch(`${backendUrl}/api/admin/content`, { headers: authHeaders });
+      const cData = await resContent.json(); 
+      if (cData.success) setContent(cData.content);
 
-        const resUsers = await fetch(`${backendUrl}/api/admin/users`, { headers: authHeaders });
-        const uData = await resUsers.json();
-        if (uData.success) setUsers(uData.users);
-      } catch (e) { console.error(e); }
-    };
-    fetchData();
-  }, [token, backendUrl, currentAdminView]);
+      const resUsers = await fetch(`${backendUrl}/api/admin/users`, { headers: authHeaders });
+      const uData = await resUsers.json(); 
+      if (uData.success) setUsers(uData.users);
+
+      const resLogs = await fetch(`${backendUrl}/api/admin/logs`, { headers: authHeaders });
+      const lData = await resLogs.json(); 
+      if (lData.success) setLogs(lData.logs);
+
+      const resApp = await fetch(`${backendUrl}/api/admin/appearance`, { headers: authHeaders });
+      const aData = await resApp.json(); 
+      if (aData.success) setAppearanceForm({ ...appearanceForm, ...aData.settings });
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => { if (token) fetchData(); }, [token, backendUrl, currentAdminView]);
+
+  // ── Admin Handlers ──────────────────────────────────────────────────────────
+  const handleSaveContent = async () => {
+    if (!contentForm.title.trim()) return showToast('Title is required.', 'error');
+    try {
+      if (editingContent) {
+        await fetch(`${backendUrl}/api/admin/content/${editingContent.id}`, { method: 'PUT', headers: authHeaders, body: JSON.stringify(contentForm) });
+        showToast('Content updated!', 'success');
+      } else {
+        await fetch(`${backendUrl}/api/admin/content`, { method: 'POST', headers: authHeaders, body: JSON.stringify(contentForm) });
+        showToast('Content published!', 'success');
+      }
+      setShowContentModal(false); setEditingContent(null); setContentForm({ title: '', category: 'Health Tips', status: 'Draft', body: '' });
+      fetchData();
+    } catch (e) { showToast('Error saving content.', 'error'); }
+  };
+
+  const handleDeleteContent = async (id) => {
+    if (!window.confirm('Delete this content?')) return;
+    try { await fetch(`${backendUrl}/api/admin/content/${id}`, { method: 'DELETE', headers: authHeaders }); fetchData(); showToast('Content deleted.', 'success'); } catch (e) { showToast('Error deleting.', 'error'); }
+  };
+
+  const handleUpdateUserStatus = async (userId, status) => {
+    try {
+      await fetch(`${backendUrl}/api/admin/users/${userId}/status`, { method: 'PUT', headers: authHeaders, body: JSON.stringify({ status }) });
+      fetchData(); showToast(`User ${status} successfully.`, 'success');
+    } catch (e) { showToast('Error updating user.', 'error'); }
+  };
+
+  const handleSaveAppearance = async () => {
+    try {
+      await fetch(`${backendUrl}/api/admin/appearance`, { method: 'PUT', headers: authHeaders, body: JSON.stringify(appearanceForm) });
+      showToast('Appearance saved!', 'success');
+    } catch (e) { showToast('Error saving appearance.', 'error'); }
+  };
 
   const runTask = async (taskName) => {
     try {
       await fetch(`${backendUrl}/api/admin/maintenance/${taskName}`, { method: 'POST', headers: authHeaders });
-      setConfirmingTask(null);
-      alert(`${taskName} executed successfully!`);
-    } catch (e) { alert(`Error running ${taskName}`); }
+      setConfirmingTask(null); showToast(`${taskName} executed successfully!`, 'success'); fetchData();
+    } catch (e) { showToast(`Error running ${taskName}`, 'error'); }
   };
 
+  // ── Render Admin Views ─────────────────────────────────────────────────────
   const renderContent = () => {
     switch(currentAdminView) {
       case 'overview':
@@ -217,27 +262,37 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
       case 'content':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>💡 Health Tips</button>
-              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>🎓 Learn Skills</button>
-              <button style={{ padding: '8px 20px', borderRadius: '20px', background: '#2c223c', color: '#ccc', border: 'none' }}>📚 Explore Topics</button>
-            </div>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-              <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
-              <button style={{ padding: '10px 24px', borderRadius: '20px', border: 'none', background: 'linear-gradient(135deg, #e91e63, #9333ea)', color: '#fff', fontWeight: 'bold' }}>+ Add New</button>
+              <input type="text" placeholder="Search..." style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
+              <button onClick={() => { setEditingContent(null); setContentForm({ title: '', category: 'Health Tips', status: 'Draft', body: '' }); setShowContentModal(true); }} style={{ padding: '10px 24px', borderRadius: '20px', border: 'none', background: 'linear-gradient(135deg, #e91e63, #9333ea)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>+ Add New</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {content.map(c => (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', background: '#2c223c', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
                   <div style={{ flex: 1, color: '#fff' }}>{c.title}</div>
-                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.category === 'Menstrual' ? '#a78bfa' : '#fcd34d', fontSize: '11px', marginRight: '12px' }}>{c.category}</span>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: '#a78bfa', fontSize: '11px', marginRight: '12px' }}>{c.category}</span>
                   <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.status === 'Live' ? '#34d399' : '#fbbf24', fontSize: '11px', marginRight: '12px' }}>{c.status}</span>
                   <div style={{ color: '#64748b', fontSize: '12px', marginRight: '20px' }}>{new Date(c.created_at).toISOString().slice(0,10)}</div>
-                  <span style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px' }}>✏️</span>
-                  <span style={{ cursor: 'pointer', color: '#94a3b8' }}>🗑️</span>
+                  <span onClick={() => { setEditingContent(c); setContentForm({ title: c.title, category: c.category, status: c.status, body: c.body }); setShowContentModal(true); }} style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px' }}>✏️</span>
+                  <span onClick={() => handleDeleteContent(c.id)} style={{ cursor: 'pointer', color: '#94a3b8' }}>🗑️</span>
                 </div>
               ))}
             </div>
+            {showContentModal && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: '#2c223c', padding: '30px', borderRadius: '16px', width: '500px', maxWidth: '90%' }}>
+                  <h3 style={{ color: '#fff', margin: '0 0 20px 0' }}>{editingContent ? 'Edit Content' : 'Create Content'}</h3>
+                  <input type="text" placeholder="Title" value={contentForm.title} onChange={e => setContentForm({...contentForm, title: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} />
+                  <select value={contentForm.category} onChange={e => setContentForm({...contentForm, category: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }}><option>Health Tips</option><option>Learn Skills</option><option>Explore Topics</option></select>
+                  <select value={contentForm.status} onChange={e => setContentForm({...contentForm, status: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }}><option>Draft</option><option>Live</option></select>
+                  <textarea placeholder="Body content..." value={contentForm.body} onChange={e => setContentForm({...contentForm, body: e.target.value})} rows="5" style={{ width: '100%', padding: '10px', marginBottom: '20px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff', resize: 'vertical' }} />
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <button onClick={() => setShowContentModal(false)} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#3d3052', color: '#ccc', cursor: 'pointer' }}>Cancel</button>
+                    <button onClick={handleSaveContent} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'users':
@@ -246,17 +301,12 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                 <input type="text" placeholder="Search by name or region..." style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
-                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#2c223c', color: '#ccc', cursor: 'pointer' }}>All</span>
-                <span style={{ padding: '6px 16px', borderRadius: '20px', background: '#2c223c', color: '#34d399', cursor: 'pointer' }}>Active</span>
               </div>
               {users.map(u => (
                 <div key={u.id} onClick={() => setSelectedUser(u)} style={{ display: 'flex', alignItems: 'center', background: selectedUser?.id === u.id ? '#3d3052' : '#2c223c', borderRadius: '12px', padding: '12px 16px', marginBottom: '8px', cursor: 'pointer' }}>
                   <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold', marginRight: '12px' }}>{u.full_name?.charAt(0)}</div>
                   <div style={{ flex: 1, color: '#fff' }}>{u.full_name}</div>
-                  <div style={{ flex: 1, color: '#888' }}>{Math.floor(Math.random() * 5) + 13}</div>
-                  <div style={{ flex: 1, color: '#888' }}>Kampala</div>
                   <div style={{ flex: 1, color: '#888' }}>{new Date(u.created_at).toISOString().slice(0,10)}</div>
-                  <span style={{ color: '#34d399', fontSize: '12px' }}>Active</span>
                 </div>
               ))}
             </div>
@@ -266,8 +316,9 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                   <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 20px' }}>{selectedUser.full_name?.charAt(0)}</div>
                   <h3>{selectedUser.full_name}</h3>
                   <p style={{ color: '#888', margin: '5px 0 20px' }}>{selectedUser.email}</p>
-                  <button style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#fbbf24', color: '#000', fontWeight: 'bold', marginRight: '8px' }}>Flag</button>
-                  <button style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 'bold' }}>Suspend</button>
+                  <button onClick={() => handleUpdateUserStatus(selectedUser.id, 'Flagged')} style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#fbbf24', color: '#000', fontWeight: 'bold', marginRight: '8px', cursor: 'pointer' }}>Flag</button>
+                  <button onClick={() => handleUpdateUserStatus(selectedUser.id, 'Suspended')} style={{ padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Suspend</button>
+                  <button onClick={() => handleUpdateUserStatus(selectedUser.id, 'Active')} style={{ marginTop: '10px', padding: '8px 20px', borderRadius: '20px', border: 'none', background: '#34d399', color: '#000', fontWeight: 'bold', cursor: 'pointer' }}>Reactivate</button>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', color: '#64748b' }}>
@@ -294,34 +345,26 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                       </div>
                       <span style={{ marginLeft: 'auto', width: '10px', height: '10px', borderRadius: '50%', background: i === 2 ? '#64748b' : '#34d399' }}></span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748b', marginBottom: '12px' }}><span>{Math.floor(Math.random()*8)} active cases</span></div>
-                    <button style={{ width: '100%', padding: '6px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#ccc' }}>{i===2 ? 'Notify' : 'Message'}</button>
+                    <button onClick={() => showToast(`Message sent to ${s}!`, 'success')} style={{ width: '100%', padding: '6px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#ccc', cursor: 'pointer' }}>{i===2 ? 'Notify' : 'Message'}</button>
                   </div>
                 ))}
               </div>
             </div>
             <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <h4 style={{ color: '#fff', margin: 0 }}>Emergency Queue</h4>
-                <span style={{ padding: '2px 10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontSize: '12px' }}>3 Active</span>
-              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}><h4 style={{ color: '#fff', margin: 0 }}>Emergency Queue</h4><span style={{ padding: '2px 10px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontSize: '12px' }}>3 Active</span></div>
               <div style={{ background: '#1e162b', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div style={{ color: '#fff' }}>Grace M.</div>
-                  <div style={{ color: '#ef4444', fontSize: '12px' }}>High</div>
-                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><div style={{ color: '#fff' }}>Grace M.</div><div style={{ color: '#ef4444', fontSize: '12px' }}>High</div></div>
                 <div style={{ color: '#888', fontSize: '12px' }}>Medical Emergency · Entebbe</div>
-                <div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>10:31 AM</div>
               </div>
               <div style={{ flex: 1, background: '#1e162b', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column' }}>
                 <h5 style={{ color: '#ccc', margin: '0 0 10px 0' }}>Live Chat — Grace M.</h5>
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                  <div style={{ background: '#2c223c', padding: '10px', borderRadius: '12px', marginBottom: '8px', alignSelf: 'flex-start', maxWidth: '80%' }}><span style={{ color: '#fff', fontSize: '13px' }}>I'm in pain, please help</span><div style={{ color: '#64748b', fontSize: '10px', marginTop: '4px' }}>10:29 AM</div></div>
+                  <div style={{ background: '#2c223c', padding: '10px', borderRadius: '12px', marginBottom: '8px', alignSelf: 'flex-start', maxWidth: '80%' }}><span style={{ color: '#fff', fontSize: '13px' }}>I'm in pain, please help</span></div>
                   <div style={{ background: 'linear-gradient(135deg, #9333ea, #e91e63)', padding: '10px', borderRadius: '12px', marginBottom: '8px', alignSelf: 'flex-end', maxWidth: '80%' }}><span style={{ color: '#fff', fontSize: '13px' }}>Hi Grace, I'm here. Can you describe what's happening?</span></div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                   <input type="text" placeholder="Type a message..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: 'none', background: '#2c223c', color: '#fff' }} />
-                  <button style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold' }}>Send</button>
+                  <button onClick={() => showToast('Message sent to Grace M.', 'success')} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Send</button>
                 </div>
               </div>
             </div>
@@ -332,30 +375,19 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
           <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-                <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Theme Presets</h4>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  {['Purple & Pink', 'Teal & Coral', 'Indigo & Gold', 'Rose & Violet'].map(t => (
-                    <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1e162b', padding: '6px 12px', borderRadius: '20px', border: '1px solid #3d3052' }}>
-                      <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: t === 'Purple & Pink' ? '#9333ea' : '#14b8a6' }}></span>
-                      <span style={{ color: '#fff', fontSize: '12px' }}>{t}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>App Text</h4>
-                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>App Name</label><input type="text" defaultValue="Big Sister" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
-                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Tagline</label><input type="text" defaultValue="FOR EVERY GIRL" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
-                <div><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Welcome Banner</label><input type="text" defaultValue="Welcome back" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>App Name</label><input type="text" value={appearanceForm.appName} onChange={e => setAppearanceForm({...appearanceForm, appName: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+                <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Tagline</label><input type="text" value={appearanceForm.tagline} onChange={e => setAppearanceForm({...appearanceForm, tagline: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
+                <div><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Welcome Banner</label><input type="text" value={appearanceForm.welcomeBanner} onChange={e => setAppearanceForm({...appearanceForm, welcomeBanner: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
               </div>
-              <button style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold' }}>Save & Publish Changes</button>
+              <button onClick={handleSaveAppearance} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Save & Publish Changes</button>
             </div>
             <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
               <h4 style={{ color: '#fff', margin: '0 0 20px 0' }}>Live Preview</h4>
               <div style={{ width: '100%', height: '80%', background: '#fff', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '24px', marginBottom: '10px' }}>Big Sister</div>
-                <div style={{ color: '#888', fontSize: '12px' }}>FOR EVERY GIRL</div>
-                <div style={{ marginTop: '20px', padding: '10px 20px', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', borderRadius: '20px' }}>Welcome back</div>
+                <div style={{ color: appearanceForm.primary, fontWeight: 'bold', fontSize: '24px', marginBottom: '10px' }}>{appearanceForm.appName}</div>
+                <div style={{ color: '#888', fontSize: '12px' }}>{appearanceForm.tagline}</div>
+                <div style={{ marginTop: '20px', padding: '10px 20px', background: `linear-gradient(135deg, ${appearanceForm.primary}, ${appearanceForm.accent})`, color: '#fff', borderRadius: '20px' }}>{appearanceForm.welcomeBanner}</div>
               </div>
             </div>
           </div>
@@ -366,7 +398,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div><h4 style={{ color: '#fff', margin: 0 }}>🔧 Maintenance Mode</h4><div style={{ color: '#888', fontSize: '12px' }}>App is live. Enable to take it offline for maintenance.</div></div>
-                <button style={{ padding: '8px 20px', borderRadius: '12px', border: '1px solid #444', background: 'transparent', color: '#fff' }}>Enable</button>
+                <button onClick={() => showToast('Maintenance mode toggled!', 'info')} style={{ padding: '8px 20px', borderRadius: '12px', border: '1px solid #444', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Enable</button>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>System Tasks</h4>
@@ -374,12 +406,8 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #3d3052' }}>
                     <div style={{ color: '#fff', fontSize: '14px' }}>{task}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                      <span style={{ color: '#64748b', fontSize: '12px' }}>Last: {new Date().toLocaleString()}</span>
                       <span style={{ color: '#64748b', fontSize: '12px', background: '#1e162b', padding: '2px 8px', borderRadius: '10px' }}>Idle</span>
-                      <button 
-                        onClick={() => setConfirmingTask(task)}
-                        style={{ padding: '6px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
-                      >Run</button>
+                      <button onClick={() => setConfirmingTask(task)} style={{ padding: '6px 16px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Run</button>
                     </div>
                   </div>
                 ))}
@@ -389,28 +417,14 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
               <h4 style={{ color: '#fff', margin: '0 0 20px 0' }}>Database Metrics</h4>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>Total Records</span><span style={{ color: '#fff' }}>48,219</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>DB Size</span><span style={{ color: '#fff' }}>2.3 GB</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '14px', marginBottom: '10px' }}><span>Active Connections</span><span style={{ color: '#fff' }}>14</span></div>
-              <div style={{ marginTop: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: '12px', marginBottom: '4px' }}><span>2.3 GB / 5 GB used</span></div>
-                <div style={{ height: '6px', background: '#1e162b', borderRadius: '4px', overflow: 'hidden' }}><div style={{ width: '46%', height: '100%', background: 'linear-gradient(90deg, #9333ea, #e91e63)', borderRadius: '4px' }}></div></div>
-              </div>
             </div>
           </div>
         );
       case 'logs':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {['All', 'Content', 'Users', 'Backend', 'Support'].map((cat, i) => (
-                  <span key={cat} style={{ padding: '6px 16px', borderRadius: '12px', background: i === 0 ? '#9333ea' : '#2c223c', color: i === 0 ? '#fff' : '#888', fontSize: '12px', cursor: 'pointer' }}>{cat}</span>
-                ))}
-              </div>
-              <button style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#ccc' }}>📁 Archive Session</button>
-            </div>
             <div style={{ flex: 1, overflowY: 'auto', background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
-              <input type="text" placeholder="Search logs..." style={{ width: '100%', padding: '10px', borderRadius: '12px', border: 'none', background: '#1e162b', color: '#fff', marginBottom: '20px' }} />
-              {activity.map((a, i) => (
+              {logs.map((a, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '12px 0', borderBottom: '1px solid #3d3052' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: i % 2 === 0 ? '#d8b4fe' : '#34d399', marginTop: '6px' }}></span>
@@ -437,7 +451,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
       <ConfirmDialog 
         isOpen={!!confirmingTask}
         title="Confirm Action"
-        message={`Are you sure you want to run "${confirmingTask}"? This may affect system performance.`}
+        message={`Are you sure you want to run "${confirmingTask}"?`}
         onConfirm={() => runTask(confirmingTask)}
         onCancel={() => setConfirmingTask(null)}
       />
@@ -453,8 +467,8 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
           {[
             { key: 'overview', label: 'Overview', icon: '📊' },
             { key: 'content', label: 'Content Management', icon: '✏️' },
-            { key: 'users', label: 'User Management', icon: '👤', badge: '142' },
-            { key: 'staff', label: 'Support Staff', icon: '💬', badge: '3' },
+            { key: 'users', label: 'User Management', icon: '👤' },
+            { key: 'staff', label: 'Support Staff', icon: '💬' },
             { key: 'appearance', label: 'App Appearance', icon: '✨' },
             { key: 'maintenance', label: 'Backend Maintenance', icon: '⚙️' },
             { key: 'logs', label: 'Activity Log', icon: '📋' },
@@ -470,8 +484,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
               }}
             >
               <span style={{ fontSize: '16px' }}>{item.icon}</span>
-              <span style={{ color: currentAdminView === item.key ? '#d8b4fe' : '#94a3b8', fontSize: '13px', fontWeight: currentAdminView === item.key ? 'bold' : 'normal' }}>{item.label}</span>
-              {item.badge && <span style={{ marginLeft: 'auto', background: '#9333ea', color: '#fff', fontSize: '10px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px' }}>{item.badge}</span>}
+              <span style={{ color: currentAdminView === item.key ? '#d8b4fe' : '#94a3b8', fontSize: '13px' }}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -491,15 +504,6 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
           <h2 style={{ margin: '0 0 6px 0', color: '#fff' }}>
             {currentAdminView.charAt(0).toUpperCase() + currentAdminView.slice(1)}
           </h2>
-          <div style={{ color: '#64748b', fontSize: '13px', marginBottom: '20px' }}>
-            {currentAdminView === 'overview' && 'Tuesday, July 8 2026 — Welcome back, Admin'}
-            {currentAdminView === 'content' && 'Add, edit, update, and remove app content across all features'}
-            {currentAdminView === 'users' && 'View, manage, and moderate all registered girls'}
-            {currentAdminView === 'staff' && 'Manage staff, respond to emergencies, and monitor live chats'}
-            {currentAdminView === 'appearance' && 'Customise how the app looks for all users'}
-            {currentAdminView === 'maintenance' && 'Run maintenance tasks, manage configuration, and monitor the database'}
-            {currentAdminView === 'logs' && 'Full audit trail of all admin actions and system events'}
-          </div>
           <div style={{ height: 'calc(100% - 70px)' }}>
             {renderContent()}
           </div>
@@ -546,6 +550,9 @@ function TermsView({ onBack }) {
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// MAIN APPLICATION - ONLY ONE EXPORT DEFAULT BELOW!
+// ══════════════════════════════════════════════════════════════════════════
 export default function App() {
   const [currentView, setCurrentView]         = useState('landing');
   const [currentAdminView, setCurrentAdminView] = useState('overview');
@@ -555,7 +562,7 @@ export default function App() {
   const [agreeToTerms, setAgreeToTerms]       = useState(false);
 
   // Toast state
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState(null); // { message, type, showLoader }
 
   const showToast = (message, type = 'success', showLoader = false, duration = 4000) => {
     setToast({ message, type, showLoader, duration });
@@ -587,7 +594,7 @@ export default function App() {
   const [bookedSessions, setBookedSessions]         = useState([]);
 
   // ── Get Support feature state ─────────────────────────────────────────────
-  const [supportView, setSupportView]               = useState('list');
+  const [supportView, setSupportView]               = useState('list');   // 'list' | 'detail' | 'myrequests'
   const [selectedSupport, setSelectedSupport]       = useState(null);
   const [supportFirstName, setSupportFirstName]     = useState('');
   const [supportSchoolName, setSupportSchoolName]   = useState('');
@@ -844,6 +851,7 @@ export default function App() {
               setAuthToken(d2.token); setCurrentUser(d2.user);
               await fetchBookedSessions(d2.token);
               await fetchSupportRequests(d2.token);
+              // Route based on role
               if (d2.user.role === 'admin') {
                 setCurrentView('admin');
               } else {
@@ -868,6 +876,8 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
+        
+        // Route based on user role
         if (data.user.role === 'admin') {
           setCurrentView('admin');
         } else {
@@ -888,6 +898,8 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
+        
+        // Route based on user role
         if (data.user.role === 'admin') {
           setCurrentView('admin');
         } else {
@@ -1773,6 +1785,7 @@ export default function App() {
           onLogout={handleLogout}
           token={authToken}
           backendUrl={BACKEND_URL}
+          showToast={showToast}
         />
       ) : (
         <div style={styles.appShell}>
