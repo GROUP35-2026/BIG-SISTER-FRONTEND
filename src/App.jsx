@@ -2,6 +2,52 @@ import React, { useState, useEffect } from 'react';
 import bgImage from './IMAGE.jpeg';
 import signBgImage from './SIGN.jpg';
 
+// ── Icon set (replaces emoji glyphs with clean line icons) ──────────────────
+function Icon({ name, size = 18, color = 'currentColor', style }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', style };
+  switch (name) {
+    case 'chat':        return <svg {...common}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>;
+    case 'handshake':    return <svg {...common}><path d="M11 17l-3.5-3.5a2 2 0 0 1 0-2.8l3-3a2 2 0 0 1 2.8 0L14 8.4"/><path d="M13 15l1.6 1.6a2 2 0 0 0 2.8 0l.1-.1a2 2 0 0 0 0-2.8L15 11.2"/><path d="M2 12l4-4 3 3-4 4-3-3z"/><path d="M22 12l-4-4-3 3 4 4 3-3z"/></svg>;
+    case 'stethoscope':  return <svg {...common}><path d="M4.5 3v6a4.5 4.5 0 0 0 9 0V3"/><path d="M9 15.5a5.5 5.5 0 0 0 5.5 5.5 5.5 5.5 0 0 0 5.5-5.5v-2"/><circle cx="20" cy="10.5" r="2"/></svg>;
+    case 'cap':          return <svg {...common}><path d="M12 4 2 9l10 5 10-5-10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/></svg>;
+    case 'alert':        return <svg {...common}><path d="M12 9v4"/><circle cx="12" cy="16.5" r="0.5" fill={color}/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>;
+    case 'chart':        return <svg {...common}><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>;
+    case 'book':         return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>;
+    case 'droplet':      return <svg {...common}><path d="M12 2.5s6.5 7 6.5 12A6.5 6.5 0 0 1 5.5 14.5C5.5 9.5 12 2.5 12 2.5z"/></svg>;
+    case 'heart':        return <svg {...common}><path d="M20.8 8.6c0-3-2.2-5.1-5-5.1-1.7 0-3.2.9-4.1 2.3C10.8 4.4 9.3 3.5 7.6 3.5c-2.8 0-5 2.1-5 5.1 0 5.4 8.6 10.4 9.4 10.9.8-.5 9.4-5.5 9.4-10.9z"/></svg>;
+    case 'pin':          return <svg {...common}><path d="M12 21s7-6.6 7-11.5A7 7 0 0 0 5 9.5C5 14.4 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>;
+    case 'users':        return <svg {...common}><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="8.5" r="2.6"/><path d="M15 13.2A6.5 6.5 0 0 1 21.5 20"/></svg>;
+    case 'badge':        return <svg {...common}><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.8 7 21l5-2.5 5 2.5-1.5-7.2"/></svg>;
+    case 'lightbulb':    return <svg {...common}><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.8 1 .8 1.7v.5h5.6v-.5c0-.7.3-1.3.8-1.7A6 6 0 0 0 12 3z"/></svg>;
+    case 'shield':       return <svg {...common}><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>;
+    case 'lock':         return <svg {...common}><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></svg>;
+    case 'mail':         return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 6.5L20.5 6"/></svg>;
+    case 'trash':        return <svg {...common}><path d="M4 7h16"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/><path d="M6 7l1 13.5A1.5 1.5 0 0 0 8.5 22h7a1.5 1.5 0 0 0 1.5-1.5L18 7"/></svg>;
+    case 'pencil':       return <svg {...common}><path d="M14.5 4.5 19.5 9.5 8 21H3v-5z"/></svg>;
+    case 'calendar':     return <svg {...common}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>;
+    case 'bell':         return <svg {...common}><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>;
+    case 'download':     return <svg {...common}><path d="M12 3v13"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>;
+    case 'bookmark':     return <svg {...common}><path d="M6 3.5h12v18l-6-4-6 4z"/></svg>;
+    case 'settings':     return <svg {...common}><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V20a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H4a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H10a1.7 1.7 0 0 0 1-1.5V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V10c.2.6.7 1.1 1.5 1.1H20a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>;
+    case 'logout':       return <svg {...common}><path d="M15 3h3.5A1.5 1.5 0 0 1 20 4.5v15a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M9 8l-4 4 4 4"/><path d="M5 12h12"/></svg>;
+    case 'profile':      return <svg {...common}><circle cx="12" cy="8" r="3.7"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>;
+    case 'gown':         return <svg {...common}><path d="M9 3h6l1 4-2 1 2 3-2 10H8L6 11l2-3-2-1z"/></svg>;
+    case 'check':        return <svg {...common}><path d="M20 6 9 17l-5-5"/></svg>;
+    case 'clipboard':    return <svg {...common}><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><path d="M9 11h6"/><path d="M9 15h6"/></svg>;
+    case 'arrow-left':   return <svg {...common}><path d="M19 12H5"/><path d="m11 6-6 6 6 6"/></svg>;
+    case 'crown':        return <svg {...common}><path d="M4 8l3.5 3L12 5l4.5 6L20 8v9H4V8z"/></svg>;
+    case 'globe':        return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg>;
+    case 'info':         return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="0.6" fill={color}/></svg>;
+    case 'x':            return <svg {...common}><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>;
+    case 'send':         return <svg {...common}><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>;
+    case 'phone':        return <svg {...common}><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg>;
+    case 'target':       return <svg {...common}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill={color}/></svg>;
+    case 'sparkle':      return <svg {...common}><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.9 4.9l2.8 2.8"/><path d="M16.3 16.3l2.8 2.8"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.9 19.1l2.8-2.8"/><path d="M16.3 7.7l2.8-2.8"/></svg>;
+    case 'home':         return <svg {...common}><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>;
+    default:             return null;
+  }
+}
+
 // ── Brand Logo (clickable, replaces the "Big Sister" text wordmark) ──────────
 function BrandLogo({ onClick }) {
   return (
@@ -67,9 +113,9 @@ function Toast({ message, type = 'success', onClose, showLoader = false, duratio
   }, [duration, onClose]);
 
   const colors = {
-    success: { bg: '#FFFFFF', border: '#16A34A', accent: '#16A34A', icon: '✓', iconBg: '#DCFCE7', text: '#15803D' },
-    error:   { bg: '#FFFFFF', border: '#DC2626', accent: '#DC2626', icon: '✕', iconBg: '#FEE2E2', text: '#DC2626' },
-    info:    { bg: '#FFFFFF', border: '#9023F0', accent: '#9023F0', icon: 'ℹ', iconBg: '#F3E8FF', text: '#7C3AED' },
+    success: { bg: '#FFFFFF', border: '#16A34A', accent: '#16A34A', icon: 'check', iconBg: '#DCFCE7', text: '#15803D' },
+    error:   { bg: '#FFFFFF', border: '#DC2626', accent: '#DC2626', icon: 'x', iconBg: '#FEE2E2', text: '#DC2626' },
+    info:    { bg: '#FFFFFF', border: '#9023F0', accent: '#9023F0', icon: 'info', iconBg: '#F3E8FF', text: '#7C3AED' },
   };
   const c = colors[type];
 
@@ -84,12 +130,12 @@ function Toast({ message, type = 'success', onClose, showLoader = false, duratio
         @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
       <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-        <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: c.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', color: c.accent, fontWeight: '800', flexShrink: 0 }}>{c.icon}</div>
+        <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: c.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.accent, flexShrink: 0 }}><Icon name={c.icon} size={16} color={c.accent} /></div>
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontSize: '13.5px', fontWeight: '700', color: '#1A1A1A', lineHeight: '1.3' }}>{message}</p>
           {showLoader && <p style={{ margin: '3px 0 0 0', fontSize: '11.5px', color: '#888888', fontWeight: '500' }}>Signing you in automatically…</p>}
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#BBBBBB', fontSize: '16px', padding: 0, lineHeight: 1, flexShrink: 0 }}>×</button>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#BBBBBB', padding: 0, lineHeight: 1, flexShrink: 0 }}><Icon name="x" size={14} color="#BBBBBB" /></button>
       </div>
       {showLoader && (
         <div style={{ height: '3px', backgroundColor: '#F0F0F0' }}>
@@ -210,22 +256,22 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>👤 <span style={{ color: '#34d399', fontSize: '12px' }}>+12%</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}><Icon name="users" size={16} color="#ccc" /> <span style={{ color: '#34d399', fontSize: '12px' }}>+12%</span></div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.totalUsers}</div>
                 <div style={{ color: '#888', fontSize: '12px' }}>Total Users</div>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>🟢 <span style={{ color: '#f472b6', fontSize: '12px' }}>+5%</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}><Icon name="chart" size={16} color="#ccc" /> <span style={{ color: '#f472b6', fontSize: '12px' }}>+5%</span></div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.activeSessions}</div>
                 <div style={{ color: '#888', fontSize: '12px' }}>Active Sessions</div>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>🆘 <span style={{ color: '#fbbf24', fontSize: '12px' }}>+23%</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}><Icon name="alert" size={16} color="#ccc" /> <span style={{ color: '#fbbf24', fontSize: '12px' }}>+23%</span></div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.supportRequests}</div>
                 <div style={{ color: '#888', fontSize: '12px' }}>Support Requests</div>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}>💚 <span style={{ color: '#34d399', fontSize: '12px' }}>+8%</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}><Icon name="heart" size={16} color="#ccc" /> <span style={{ color: '#34d399', fontSize: '12px' }}>+8%</span></div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.healthTipsLive}</div>
                 <div style={{ color: '#888', fontSize: '12px' }}>Health Tips Live</div>
               </div>
@@ -273,8 +319,8 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                   <span style={{ padding: '4px 12px', borderRadius: '12px', background: '#a78bfa', fontSize: '11px', marginRight: '12px' }}>{c.category}</span>
                   <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.status === 'Live' ? '#34d399' : '#fbbf24', fontSize: '11px', marginRight: '12px' }}>{c.status}</span>
                   <div style={{ color: '#64748b', fontSize: '12px', marginRight: '20px' }}>{new Date(c.created_at).toISOString().slice(0,10)}</div>
-                  <span onClick={() => { setEditingContent(c); setContentForm({ title: c.title, category: c.category, status: c.status, body: c.body }); setShowContentModal(true); }} style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px' }}>✏️</span>
-                  <span onClick={() => handleDeleteContent(c.id)} style={{ cursor: 'pointer', color: '#94a3b8' }}>🗑️</span>
+                  <span onClick={() => { setEditingContent(c); setContentForm({ title: c.title, category: c.category, status: c.status, body: c.body }); setShowContentModal(true); }} style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px', display: 'inline-flex' }}><Icon name="pencil" size={15} color="#94a3b8" /></span>
+                  <span onClick={() => handleDeleteContent(c.id)} style={{ cursor: 'pointer', color: '#94a3b8', display: 'inline-flex' }}><Icon name="trash" size={15} color="#94a3b8" /></span>
                 </div>
               ))}
             </div>
@@ -322,7 +368,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', color: '#64748b' }}>
-                  <div style={{ fontSize: '60px', marginBottom: '10px' }}>👤</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="profile" size={44} color="#64748b" /></div>
                   <p>Select a user to view details</p>
                 </div>
               )}
@@ -397,7 +443,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
           <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div><h4 style={{ color: '#fff', margin: 0 }}>🔧 Maintenance Mode</h4><div style={{ color: '#888', fontSize: '12px' }}>App is live. Enable to take it offline for maintenance.</div></div>
+                <div><h4 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="settings" size={16} color="#fff" /> Maintenance Mode</h4><div style={{ color: '#888', fontSize: '12px' }}>App is live. Enable to take it offline for maintenance.</div></div>
                 <button onClick={() => showToast('Maintenance mode toggled!', 'info')} style={{ padding: '8px 20px', borderRadius: '12px', border: '1px solid #444', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Enable</button>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
@@ -465,13 +511,13 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
         <div style={{ padding: '0 16px', fontSize: '11px', color: '#64748b', fontWeight: 'bold', marginBottom: '10px', textTransform: 'uppercase' }}>ADMIN MENU</div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
           {[
-            { key: 'overview', label: 'Overview', icon: '📊' },
-            { key: 'content', label: 'Content Management', icon: '✏️' },
-            { key: 'users', label: 'User Management', icon: '👤' },
-            { key: 'staff', label: 'Support Staff', icon: '💬' },
-            { key: 'appearance', label: 'App Appearance', icon: '✨' },
-            { key: 'maintenance', label: 'Backend Maintenance', icon: '⚙️' },
-            { key: 'logs', label: 'Activity Log', icon: '📋' },
+            { key: 'overview', label: 'Overview', icon: 'chart' },
+            { key: 'content', label: 'Content Management', icon: 'pencil' },
+            { key: 'users', label: 'User Management', icon: 'profile' },
+            { key: 'staff', label: 'Support Staff', icon: 'chat' },
+            { key: 'appearance', label: 'App Appearance', icon: 'lightbulb' },
+            { key: 'maintenance', label: 'Backend Maintenance', icon: 'settings' },
+            { key: 'logs', label: 'Activity Log', icon: 'clipboard' },
           ].map(item => (
             <div 
               key={item.key} 
@@ -483,12 +529,12 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                 marginBottom: '4px' 
               }}
             >
-              <span style={{ fontSize: '16px' }}>{item.icon}</span>
+              <Icon name={item.icon} size={16} color={currentAdminView === item.key ? '#d8b4fe' : '#94a3b8'} />
               <span style={{ color: currentAdminView === item.key ? '#d8b4fe' : '#94a3b8', fontSize: '13px' }}>{item.label}</span>
             </div>
           ))}
         </div>
-        <div onClick={onLogout} style={{ padding: '16px 20px', borderTop: '1px solid #2a1f3d', color: '#64748b', cursor: 'pointer', fontSize: '13px' }}>➜ Logout</div>
+        <div onClick={onLogout} style={{ padding: '16px 20px', borderTop: '1px solid #2a1f3d', color: '#64748b', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="logout" size={14} color="#64748b" /> Logout</div>
       </aside>
 
       {/* Main Content */}
@@ -519,7 +565,7 @@ function TermsView({ onBack }) {
     <div style={{ display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', alignItems: 'center', justifyContent: 'center', padding: '20px 16px', boxSizing: 'border-box' }}>
       <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '500px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', padding: '28px', boxSizing: 'border-box', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px', flexShrink: 0 }}>
-          <button onClick={onBack} style={{ background: '#F3E8FF', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', fontSize: '16px', color: '#9023F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+          <button onClick={onBack} style={{ background: '#F3E8FF', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', color: '#9023F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="arrow-left" size={15} color="#9023F0" /></button>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#9023F0' }}>Terms & Conditions</h2>
         </div>
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }} className="no-scrollbar">
@@ -535,7 +581,7 @@ function TermsView({ onBack }) {
           ].map(section => (
             <div key={section.title} style={{ marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 5px 0', fontSize: '13px', fontWeight: '800', color: '#1A1A1A' }}>{section.title}</h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#555555', lineHeight: '1.55' }}>{section.body}</p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#555555', lineHeight: '1.55', textAlign: 'justify' }}>{section.body}</p>
             </div>
           ))}
           <div style={{ borderTop: '1px solid #EAEAEA', paddingTop: '12px', marginTop: '8px' }}>
@@ -611,16 +657,15 @@ export default function App() {
   const TIME_SLOTS = ['9:00 AM', '10:30 AM', '12:00 PM', '2:00 PM', '3:30 PM', '5:00 PM'];
 
   const counsellors = [
-    { id: 'grace',  name: 'Auntie Grace Namukasa', role: 'Community Health Educator',    bio: 'Community health champion helping girls understand their bodies, stay healthy, and stay in school.', tags: ['Period Health', 'Nutrition', 'Self-Care'], avatar: '👩🏾',     color: '#E61B9B', availability: { type: 'available' } },
-    { id: 'joseph', name: 'Mr. Joseph Ssemanda',   role: 'School & Youth Counsellor',    bio: 'Youth-focused counsellor specialising in school pressures, family challenges, and trauma support.',   tags: ['School Stress', 'Family Issues', 'Abuse Support'], avatar: '🧑🏽‍💼', color: '#3B82F6', availability: { type: 'next', label: 'Next: Tomorrow, 9:00 AM' } },
-    { id: 'sarah',  name: 'Dr. Sarah Nakato',      role: 'Adolescent Health Specialist', bio: 'Licensed physician offering confidential guidance on reproductive health and adolescent wellness.',   tags: ['Reproductive Health', 'Medical Advice', 'Confidential'], avatar: '👩🏽‍⚕️', color: '#9023F0', availability: { type: 'available' } }
+    { id: 'grace',  name: 'Auntie Grace Namukasa', role: 'Community Health Educator',    bio: 'Community health champion helping girls understand their bodies, stay healthy, and stay in school.', tags: ['Period Health', 'Nutrition', 'Self-Care'], avatar: 'gown',     color: '#E61B9B', availability: { type: 'available' } },
+    { id: 'joseph', name: 'Mr. Joseph Ssemanda',   role: 'School & Youth Counsellor',    bio: 'Youth-focused counsellor specialising in school pressures, family challenges, and trauma support.',   tags: ['School Stress', 'Family Issues', 'Abuse Support'], avatar: 'profile', color: '#3B82F6', availability: { type: 'next', label: 'Next: Tomorrow, 9:00 AM' } },
+    { id: 'sarah',  name: 'Dr. Sarah Nakato',      role: 'Adolescent Health Specialist', bio: 'Licensed physician offering confidential guidance on reproductive health and adolescent wellness.',   tags: ['Reproductive Health', 'Medical Advice', 'Confidential'], avatar: 'stethoscope', color: '#9023F0', availability: { type: 'available' } }
   ];
 
   const supportCategories = [
     {
       id: 'pads',
-      icon: '🩹',
-      emoji: '🩹',
+      icon: 'droplet',
       label: 'Sanitary Pads',
       subtitle: 'Free pads for girls in need',
       color: '#E61B9B',
@@ -630,8 +675,7 @@ export default function App() {
     },
     {
       id: 'fees',
-      icon: '📚',
-      emoji: '📚',
+      icon: 'book',
       label: 'School Fees Support',
       subtitle: 'Financial aid & scholarships',
       color: '#3B82F6',
@@ -641,8 +685,7 @@ export default function App() {
     },
     {
       id: 'food',
-      icon: '🍎',
-      emoji: '🍎',
+      icon: 'heart',
       label: 'Food & Nutrition',
       subtitle: 'Meals and nutritional support',
       color: '#16A34A',
@@ -652,8 +695,7 @@ export default function App() {
     },
     {
       id: 'mental',
-      icon: '💜',
-      emoji: '💜',
+      icon: 'chat',
       label: 'Mental Health Support',
       subtitle: 'Emotional & psychological help',
       color: '#9023F0',
@@ -875,7 +917,7 @@ export default function App() {
         setAuthEmail(''); setAuthPassword('');
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
-        showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
+        showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
         if (data.user.role === 'admin') {
@@ -897,7 +939,7 @@ export default function App() {
         setAuthToken(data.token); setCurrentUser(data.user);
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
-        showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'} 👋`, 'success');
+        showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
         if (data.user.role === 'admin') {
@@ -921,27 +963,27 @@ export default function App() {
   // SIDEBAR NAVIGATION (logged-in layout)
   // ══════════════════════════════════════════════════════════════════════════
   const primaryNavItems = [
-    { key: 'dashboard',  icon: '🏠', label: 'Home',                onClick: () => setCurrentView('dashboard') },
-    { key: 'aibot',      icon: '💬', label: 'Ask AI Health Bot',   onClick: () => showToast('AI Health Bot coming soon!', 'info') },
-    { key: 'support',    icon: '🤝', label: 'Get Support',         onClick: () => { openSupportHub(); setCurrentView('support'); } },
-    { key: 'counsellor', icon: '🧑‍⚕️', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
-    { key: 'skills',     icon: '🎓', label: 'Learn Skills',        onClick: () => showToast('Skills & learning portal coming soon!', 'info') },
-    { key: 'emergency',  icon: '🚨', label: 'Emergency Help',      onClick: () => showToast('Locating nearest clinic networks…', 'info') },
-    { key: 'track',      icon: '📊', label: 'Track Health',        onClick: () => showToast('Health tracker coming soon!', 'info') },
-    { key: 'topics',     icon: '📚', label: 'Explore Topics',      onClick: () => showToast('Loading educational content library…', 'info') },
+    { key: 'dashboard',  icon: 'chart',       label: 'Home',                onClick: () => setCurrentView('dashboard') },
+    { key: 'aibot',      icon: 'chat',        label: 'Ask AI Health Bot',   onClick: () => { setCurrentView('aibot'); } },
+    { key: 'support',    icon: 'handshake',   label: 'Get Support',         onClick: () => { openSupportHub(); setCurrentView('support'); } },
+    { key: 'counsellor', icon: 'stethoscope', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
+    { key: 'skills',     icon: 'cap',         label: 'Learn Skills',        onClick: () => { setCurrentView('skills'); } },
+    { key: 'emergency',  icon: 'alert',       label: 'Emergency Help',      onClick: () => { setCurrentView('emergency'); } },
+    { key: 'track',      icon: 'chart',       label: 'Track Health',        onClick: () => { setCurrentView('track'); } },
+    { key: 'topics',     icon: 'book',        label: 'Explore Topics',      onClick: () => { setCurrentView('topics'); } },
   ];
 
   const resourceNavItems = [
-    { key: 'library',   icon: '📖', label: 'Library',   onClick: () => showToast('Library coming soon!', 'info') },
-    { key: 'saved',     icon: '🔖', label: 'Saved',      onClick: () => showToast('Saved items coming soon!', 'info') },
-    { key: 'reminders', icon: '🔔', label: 'Reminders',  onClick: () => showToast('Reminders coming soon!', 'info') },
-    { key: 'downloads', icon: '⬇️', label: 'Downloads',  onClick: () => showToast('Downloads coming soon!', 'info') },
+    { key: 'library',   icon: 'book',     label: 'Library',   onClick: () => showToast('Library coming soon!', 'info') },
+    { key: 'saved',     icon: 'bookmark', label: 'Saved',      onClick: () => showToast('Saved items coming soon!', 'info') },
+    { key: 'reminders', icon: 'bell',     label: 'Reminders',  onClick: () => showToast('Reminders coming soon!', 'info') },
+    { key: 'downloads', icon: 'download', label: 'Downloads',  onClick: () => showToast('Downloads coming soon!', 'info') },
   ];
 
   const accountNavItems = [
-    { key: 'profile',  icon: '👤', label: 'My Profile', onClick: openProfile },
-    { key: 'settings', icon: '⚙️', label: 'Settings',   onClick: () => showToast('Settings coming soon!', 'info') },
-    { key: 'logout',   icon: '↪️', label: 'Logout',     onClick: handleLogout },
+    { key: 'profile',  icon: 'profile',  label: 'My Profile', onClick: openProfile },
+    { key: 'settings', icon: 'settings', label: 'Settings',   onClick: () => showToast('Settings coming soon!', 'info') },
+    { key: 'logout',   icon: 'logout',   label: 'Logout',     onClick: handleLogout },
   ];
 
   const isNavItemActive = (key) => {
@@ -949,6 +991,11 @@ export default function App() {
     if (key === 'support') return currentView === 'support';
     if (key === 'counsellor') return currentView === 'counsellor';
     if (key === 'profile') return currentView === 'profile';
+    if (key === 'aibot') return currentView === 'aibot';
+    if (key === 'skills') return currentView === 'skills';
+    if (key === 'emergency') return currentView === 'emergency';
+    if (key === 'track') return currentView === 'track';
+    if (key === 'topics') return currentView === 'topics';
     return false;
   };
 
@@ -966,10 +1013,10 @@ export default function App() {
     sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: '18px 10px 8px 10px' },
     sidebarNavItem:      { display: 'flex', alignItems: 'center', gap: '11px', padding: '9px 12px', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600', color: '#5B5B5B', cursor: 'pointer', marginBottom: '2px', transition: 'background-color 0.15s, color 0.15s' },
     sidebarNavItemActive:{ backgroundColor: '#F3E8FF', color: '#9023F0', fontWeight: '800' },
-    sidebarNavIcon:      { fontSize: '15px', width: '18px', textAlign: 'center', flexShrink: 0 },
+    sidebarNavIcon:      { width: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     sidebarDivider:      { height: '1px', backgroundColor: '#F0E4F7', margin: '10px 10px' },
     sidebarBottomCard:   { margin: '10px 14px 16px 14px', backgroundColor: '#FDEBF5', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', boxSizing: 'border-box' },
-    sidebarBottomIcon:   { fontSize: '18px', flexShrink: 0 },
+    sidebarBottomIcon:   { flexShrink: 0, display: 'flex', alignItems: 'center' },
     sidebarBottomTitle:  { fontSize: '12.5px', fontWeight: '800', color: '#C0288E', margin: 0 },
     sidebarBottomDesc:   { fontSize: '11px', color: '#B36FA0', margin: '2px 0 0 0', fontWeight: '500', lineHeight: '1.35' },
 
@@ -988,13 +1035,13 @@ export default function App() {
     landingHeroLeft:      { width: '100%', maxWidth: '550px', textAlign: 'left', zIndex: 2 },
     landingHeroTag:       { fontSize: '11px', fontWeight: '800', color: themeColors.magenta, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' },
     landingHeroTitle:     { fontSize: '38px', fontWeight: '800', color: themeColors.textDark, lineHeight: '1.15', margin: '0 0 12px 0' },
-    landingHeroDesc:      { fontSize: '14px', color: '#444444', lineHeight: '1.6', marginBottom: '20px', fontWeight: '500' },
+    landingHeroDesc:      { fontSize: '14px', color: '#444444', lineHeight: '1.6', marginBottom: '20px', fontWeight: '500', textAlign: 'justify' },
     landingHeroBtnGroup:  { display: 'flex', gap: '14px' },
     landingGridSection:   { padding: '20px 60px', flex: '0.8', display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box', backgroundColor: '#FDF8FF', borderTop: '1px solid #F5E6FA' },
     landingInfoCard:      { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '20px', flex: '1', height: '85%', minWidth: '260px', maxWidth: '360px', boxSizing: 'border-box', border: '1px solid #EFE0F5', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
-    landingCardIcon:      { fontSize: '22px', marginBottom: '10px' },
+    landingCardIcon:      { marginBottom: '10px', display: 'flex' },
     landingCardTitle:     { fontSize: '15px', fontWeight: '700', color: themeColors.textDark, marginBottom: '6px' },
-    landingCardDesc:      { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0 },
+    landingCardDesc:      { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0, textAlign: 'justify' },
 
     authCardWrapper: { display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'center', padding: '20px 16px', boxSizing: 'border-box' },
     authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: '24px', textAlign: 'center', overflow: 'hidden' },
@@ -1003,7 +1050,7 @@ export default function App() {
     inputGroup:      { marginBottom: '10px', textAlign: 'left', position: 'relative' },
     inputLabel:      { display: 'block', fontSize: '11px', fontWeight: '700', color: '#A0A0A0', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
     inputField:      { width: '100%', padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: '#F4F5F7', fontSize: '13px', color: '#333333', boxSizing: 'border-box', outline: 'none' },
-    privacyFooterText: { fontSize: '11px', color: '#8A8A8A', marginTop: '12px', textAlign: 'center', fontWeight: '400' },
+    privacyFooterText: { fontSize: '11px', color: '#8A8A8A', marginTop: '12px', textAlign: 'center', fontWeight: '400', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     overlay:  { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
     popupBox: { backgroundColor: '#FFFFFF', borderRadius: '16px', width: '90%', maxWidth: '360px', padding: '24px', boxShadow: '0px 8px 24px rgba(0,0,0,0.3)', textAlign: 'left', boxSizing: 'border-box' },
 
@@ -1016,7 +1063,7 @@ export default function App() {
     tipBody:               { fontSize: '13px', fontWeight: '500', margin: 0, lineHeight: '1.3' },
     featuresGridContainer: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 },
     featureCard:  { borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: '110px' },
-    featureIcon:  { fontSize: '20px', marginBottom: '8px', display: 'block' },
+    featureIcon:  { marginBottom: '8px', display: 'flex' },
     featureTitle: { fontSize: '14px', fontWeight: '700', marginBottom: '4px' },
     featureDesc:  { fontSize: '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
 
@@ -1024,22 +1071,22 @@ export default function App() {
     quickAccessTitle:     { fontSize: '14px', fontWeight: '800', color: themeColors.purple, margin: '0 0 10px 0' },
     quickAccessRow:        { display: 'flex', gap: '12px', flexWrap: 'wrap' },
     quickAccessPill:       { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #F0E4F7', borderRadius: '14px', padding: '11px 16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#333333', flex: '1 1 180px', minWidth: '180px', transition: 'transform 0.15s, box-shadow 0.15s' },
-    quickAccessIconWrap:   (bg) => ({ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }),
+    quickAccessIconWrap:   (bg) => ({ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
 
     counsellorWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FBF2FC' },
     counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
-    counsellorBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
+    counsellorBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
     counsellorHeaderTitle:    { fontSize: '20px', fontWeight: '800', color: themeColors.purple, margin: 0 },
     counsellorHeaderSubtitle: { fontSize: '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' },
-    mySessionsLink:           { marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer', backgroundColor: '#F3E8FF', padding: '8px 16px', borderRadius: '18px', whiteSpace: 'nowrap' },
+    mySessionsLink:           { marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer', backgroundColor: '#F3E8FF', padding: '8px 16px', borderRadius: '18px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' },
     counsellorListBody:       { padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
     counsellorCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
     counsellorCardTopRow:     { display: 'flex', alignItems: 'flex-start', gap: '14px' },
-    counsellorAvatarCircle:   { width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 },
+    counsellorAvatarCircle:   { width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     counsellorInfoBlock:      { flex: 1, minWidth: 0 },
     counsellorName:           { fontSize: '15.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
     counsellorRole:           { fontSize: '12.5px', color: '#888888', margin: '2px 0 8px 0', fontWeight: '600' },
-    counsellorBio:            { fontSize: '12.5px', color: '#555555', lineHeight: '1.45', margin: '0 0 10px 0' },
+    counsellorBio:            { fontSize: '12.5px', color: '#555555', lineHeight: '1.45', margin: '0 0 10px 0', textAlign: 'justify' },
     counsellorTagsRow:        { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' },
     counsellorTag:            { fontSize: '11.5px', fontWeight: '700', color: themeColors.purple, backgroundColor: '#F3E8FF', padding: '4px 10px', borderRadius: '12px' },
     availabilityBadgeAvailable: { fontSize: '11.5px', fontWeight: '700', color: '#16A34A', backgroundColor: '#DCFCE7', padding: '5px 12px', borderRadius: '14px', whiteSpace: 'nowrap', flexShrink: 0 },
@@ -1049,18 +1096,18 @@ export default function App() {
     bookSessionBtn:         { flex: 1, backgroundColor: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     groupSessionCard:       { background: 'linear-gradient(135deg, #C026D3 0%, #9023F0 100%)', borderRadius: '18px', padding: '20px', color: '#FFFFFF', boxSizing: 'border-box' },
     groupSessionTitleRow:   { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', fontSize: '15px', fontWeight: '800' },
-    groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0' },
+    groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0', textAlign: 'justify' },
     joinGroupBtn:           { width: '100%', backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer' },
 
     chatBody:           { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
-    chatAvatarLarge:    { width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '42px', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
+    chatAvatarLarge:    { width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
     chatCounsellorName: { fontSize: '17px', fontWeight: '800', color: themeColors.purple, margin: '0 0 2px 0' },
     chatCounsellorRole: { fontSize: '13px', color: '#A56BC4', margin: '0 0 24px 0', fontWeight: '600' },
-    chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px' },
+    chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px', textAlign: 'justify' },
 
     bookingBody:             { padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
     bookingCounsellorBanner: { borderRadius: '18px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', color: '#FFFFFF' },
-    bookingAvatarCircle:     { width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 },
+    bookingAvatarCircle:     { width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     bookingPanel:            { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
     bookingPanelLabel:       { fontSize: '13px', fontWeight: '700', color: themeColors.textDark, marginBottom: '12px' },
     timeSlotGrid:            { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' },
@@ -1076,7 +1123,7 @@ export default function App() {
 
     confirmationBody:         { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
     confirmationCard:         { backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '40px 32px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box' },
-    confirmationCheckCircle:  { width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', fontSize: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' },
+    confirmationCheckCircle:  { width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' },
     confirmationTitle:        { fontSize: '21px', fontWeight: '800', color: themeColors.textDark, margin: '0 0 14px 0' },
     confirmationWithText:     { fontSize: '14px', color: '#555555', margin: '0 0 4px 0', fontWeight: '600' },
     confirmationTimeText:     { fontSize: '17px', color: themeColors.purple, fontWeight: '800', margin: '0 0 16px 0' },
@@ -1086,15 +1133,15 @@ export default function App() {
     mySessionsEmptyState: { textAlign: 'center', padding: '60px 32px', color: '#999999' },
     sessionCard:          { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' },
     sessionCardTopRow:    { display: 'flex', alignItems: 'center', gap: '12px' },
-    sessionCardAvatar:    { width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '19px', flexShrink: 0 },
+    sessionCardAvatar:    { width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     sessionCardName:      { fontSize: '14.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
     sessionCardRole:      { fontSize: '12px', color: '#888888', margin: '1px 0 0 0', fontWeight: '600' },
     sessionTimeBadge:     { marginLeft: 'auto', fontSize: '12px', fontWeight: '700', color: themeColors.purple, backgroundColor: '#F3E8FF', padding: '6px 12px', borderRadius: '14px', whiteSpace: 'nowrap' },
-    sessionNoteText:      { fontSize: '12.5px', color: '#666666', backgroundColor: '#FAFAFA', padding: '10px 12px', borderRadius: '10px', margin: 0, lineHeight: '1.4' },
-    sessionAnonTag:       { fontSize: '11px', fontWeight: '700', color: '#888888', backgroundColor: '#F1F1F1', padding: '3px 9px', borderRadius: '10px', alignSelf: 'flex-start' },
+    sessionNoteText:      { fontSize: '12.5px', color: '#666666', backgroundColor: '#FAFAFA', padding: '10px 12px', borderRadius: '10px', margin: 0, lineHeight: '1.4', textAlign: 'justify' },
+    sessionAnonTag:       { fontSize: '11px', fontWeight: '700', color: '#888888', backgroundColor: '#F1F1F1', padding: '3px 9px', borderRadius: '10px', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '4px' },
     sessionActionRow:     { display: 'flex', gap: '10px' },
-    sessionEditBtn:       { flex: 1, backgroundColor: '#F3E8FF', color: themeColors.purple, border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer' },
-    sessionDeleteBtn:     { flex: 1, backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer' },
+    sessionEditBtn:       { flex: 1, backgroundColor: '#F3E8FF', color: themeColors.purple, border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
+    sessionDeleteBtn:     { flex: 1, backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     deleteConfirmRow:     { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', backgroundColor: '#FEF2F2', borderRadius: '14px', padding: '12px 14px' },
     deleteConfirmText:    { fontSize: '12px', color: '#991B1B', fontWeight: '600', margin: 0 },
     deleteConfirmActions: { display: 'flex', gap: '8px', flexShrink: 0 },
@@ -1103,12 +1150,12 @@ export default function App() {
 
     supportWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#EEF2FF' },
     supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
-    supportBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '16px', color: '#3B82F6', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
+    supportBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#3B82F6', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
     supportHeaderTitle:    { fontSize: '20px', fontWeight: '800', color: '#3B82F6', margin: 0 },
     supportHeaderSubtitle: { fontSize: '12.5px', color: '#6366F1', margin: 0, fontWeight: '500' },
     supportListBody:       { padding: '0 32px 32px 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px', boxSizing: 'border-box' },
     supportCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px', transition: 'transform 0.15s, box-shadow 0.15s' },
-    supportCardIcon:       { width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' },
+    supportCardIcon:       { width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     supportCardTitle:      { fontSize: '15px', fontWeight: '800', color: '#1A1A1A', margin: 0 },
     supportCardSubtitle:   { fontSize: '12px', color: '#888888', margin: 0, fontWeight: '500' },
     supportLearnMore:      { fontSize: '12.5px', fontWeight: '700', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' },
@@ -1129,7 +1176,7 @@ export default function App() {
             onMouseEnter={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
             onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
-            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color={isNavItemActive(item.key) ? '#9023F0' : '#5B5B5B'} /></span>
             <span>{item.label}</span>
           </div>
         ))}
@@ -1143,7 +1190,7 @@ export default function App() {
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
-            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color="#5B5B5B" /></span>
             <span>{item.label}</span>
           </div>
         ))}
@@ -1157,17 +1204,17 @@ export default function App() {
             onMouseEnter={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
             onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
-            <span style={styles.sidebarNavIcon}>{item.icon}</span>
+            <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color={isNavItemActive(item.key) ? '#9023F0' : '#5B5B5B'} /></span>
             <span>{item.label}</span>
           </div>
         ))}
       </div>
 
       <div style={styles.sidebarBottomCard}>
-        <span style={styles.sidebarBottomIcon}>👑</span>
+        <span style={styles.sidebarBottomIcon}><Icon name="badge" size={20} color="#C0288E" /></span>
         <div>
-          <p style={styles.sidebarBottomTitle}>You're amazing!</p>
-          <p style={styles.sidebarBottomDesc}>Take care of yourself today. 💗</p>
+          <p style={styles.sidebarBottomTitle}>You're doing great</p>
+          <p style={styles.sidebarBottomDesc}>Take a moment for yourself today.</p>
         </div>
       </div>
     </aside>
@@ -1187,14 +1234,14 @@ export default function App() {
     return (
       <div style={styles.supportWrapper} className="no-scrollbar">
         <div style={styles.supportHeaderBar}>
-          <button style={styles.supportBackBtn} onClick={handleSupportBack}>←</button>
+          <button style={styles.supportBackBtn} onClick={handleSupportBack}><Icon name="arrow-left" size={15} color="#3B82F6" /></button>
           <div>
             <h2 style={styles.supportHeaderTitle}>{supportView === 'detail' && cat ? cat.label : 'Get Support'}</h2>
             <p style={styles.supportHeaderSubtitle}>{supportView === 'detail' && cat ? cat.subtitle : 'Free resources for girls in Uganda'}</p>
           </div>
           {supportView === 'list' && (
             <span style={{ ...styles.mySessionsLink, color: '#3B82F6', backgroundColor: '#EEF2FF' }} onClick={() => setSupportView('myrequests')}>
-              📋 My Requests {supportRequests.length > 0 ? `(${supportRequests.length})` : ''}
+              <Icon name="clipboard" size={14} color="#3B82F6" /> My Requests {supportRequests.length > 0 ? `(${supportRequests.length})` : ''}
             </span>
           )}
         </div>
@@ -1203,7 +1250,7 @@ export default function App() {
           <div style={styles.supportListBody}>
             {supportCategories.map(cat => (
               <div key={cat.id} style={styles.supportCard} onClick={() => { setSelectedSupport(cat); setSupportView('detail'); }} onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.09)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.04)'; }}>
-                <div style={{ ...styles.supportCardIcon, backgroundColor: `${cat.color}18` }}>{cat.emoji}</div>
+                <div style={{ ...styles.supportCardIcon, backgroundColor: `${cat.color}18` }}><Icon name={cat.icon} size={22} color={cat.color} /></div>
                 <div>
                   <p style={styles.supportCardTitle}>{cat.label}</p>
                   <p style={styles.supportCardSubtitle}>{cat.subtitle}</p>
@@ -1217,7 +1264,7 @@ export default function App() {
         {supportView === 'detail' && cat && (
           <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
             <div style={{ borderRadius: '18px', background: cat.gradient, padding: '28px 24px', color: '#FFFFFF' }}>
-              <div style={{ fontSize: '32px', marginBottom: '10px' }}>{cat.emoji}</div>
+              <div style={{ marginBottom: '10px' }}><Icon name={cat.icon} size={30} color="#FFFFFF" /></div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '800' }}>{cat.label}</h3>
               <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{cat.subtitle}</p>
             </div>
@@ -1227,7 +1274,7 @@ export default function App() {
               {cat.includes.map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < cat.includes.length - 1 ? '10px' : 0 }}>
                   <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${cat.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: '10px', color: cat.color }}>✓</span>
+                    <Icon name="check" size={10} color={cat.color} />
                   </div>
                   <span style={{ fontSize: '13px', color: '#444444', fontWeight: '500' }}>{item}</span>
                 </div>
@@ -1258,7 +1305,7 @@ export default function App() {
           <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
             {supportRequests.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 32px', color: '#999999' }}>
-                <div style={{ fontSize: '32px', marginBottom: '10px' }}>📋</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="clipboard" size={30} color="#999999" /></div>
                 <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>No requests submitted yet</p>
                 <p style={{ fontSize: '12.5px', marginTop: '6px' }}>Submit a support request to see it here.</p>
               </div>
@@ -1268,7 +1315,7 @@ export default function App() {
                 return (
                   <div key={req.id} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: `${catInfo.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0 }}>{catInfo.emoji}</div>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: `${catInfo.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={catInfo.icon} size={18} color={catInfo.color} /></div>
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#1A1A1A' }}>{req.categoryLabel || catInfo.label}</p>
                         <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#888888', fontWeight: '500' }}>{req.firstName} · {req.schoolName}</p>
@@ -1284,7 +1331,7 @@ export default function App() {
                         </div>
                       </div>
                     ) : (
-                      <button style={{ ...styles.sessionDeleteBtn, flex: 'none' }} onClick={() => setConfirmDeleteSupportId(req.id)}>🗑️ Remove request</button>
+                      <button style={{ ...styles.sessionDeleteBtn, flex: 'none' }} onClick={() => setConfirmDeleteSupportId(req.id)}><Icon name="trash" size={13} color="#DC2626" /> Remove request</button>
                     )}
                   </div>
                 );
@@ -1308,14 +1355,14 @@ export default function App() {
     return (
       <div style={styles.counsellorWrapper} className="no-scrollbar">
         <div style={styles.counsellorHeaderBar}>
-          <button style={styles.counsellorBackBtn} onClick={handleBack}>←</button>
+          <button style={styles.counsellorBackBtn} onClick={handleBack}><Icon name="arrow-left" size={15} color="#9023F0" /></button>
           <div>
             <h2 style={styles.counsellorHeaderTitle}>Talk to a Counsellor</h2>
             <p style={styles.counsellorHeaderSubtitle}>Safe, confidential support</p>
           </div>
           {counsellorView === 'list' && (
             <span style={styles.mySessionsLink} onClick={() => setCounsellorView('mysessions')}>
-              📅 My Sessions {bookedSessions.length > 0 ? `(${bookedSessions.length})` : ''}
+              <Icon name="calendar" size={14} color="#9023F0" /> My Sessions {bookedSessions.length > 0 ? `(${bookedSessions.length})` : ''}
             </span>
           )}
         </div>
@@ -1325,7 +1372,7 @@ export default function App() {
             {counsellors.map(c => (
               <div key={c.id} style={styles.counsellorCard}>
                 <div style={styles.counsellorCardTopRow}>
-                  <div style={{ ...styles.counsellorAvatarCircle, backgroundColor: `${c.color}22` }}>{c.avatar}</div>
+                  <div style={{ ...styles.counsellorAvatarCircle, backgroundColor: `${c.color}22` }}><Icon name={c.avatar} size={22} color={c.color} /></div>
                   <div style={styles.counsellorInfoBlock}>
                     <h3 style={styles.counsellorName}>{c.name}</h3>
                     <p style={styles.counsellorRole}>{c.role}</p>
@@ -1337,13 +1384,13 @@ export default function App() {
                   {c.tags.map(tag => <span key={tag} style={styles.counsellorTag}>{tag}</span>)}
                 </div>
                 <div style={styles.counsellorActionRow}>
-                  <button style={styles.chatNowBtn} onClick={() => handleChatNow(c)}>💬 Chat Now</button>
-                  <button style={styles.bookSessionBtn} onClick={() => handleBookSessionClick(c)}>📅 Book Session</button>
+                  <button style={styles.chatNowBtn} onClick={() => handleChatNow(c)}><Icon name="chat" size={14} color="#FFFFFF" /> Chat Now</button>
+                  <button style={styles.bookSessionBtn} onClick={() => handleBookSessionClick(c)}><Icon name="calendar" size={14} color={themeColors.purple} /> Book Session</button>
                 </div>
               </div>
             ))}
             <div style={styles.groupSessionCard}>
-              <div style={styles.groupSessionTitleRow}><span>👥</span> Weekly Group Sessions</div>
+              <div style={styles.groupSessionTitleRow}><Icon name="users" size={18} color="#FFFFFF" /> Weekly Group Sessions</div>
               <p style={styles.groupSessionDesc}>Join other girls in a safe, guided group discussion. Topics change weekly.</p>
               <button style={styles.joinGroupBtn} onClick={() => showToast("Joining this week's group session…", 'info')}>Join Group Session</button>
             </div>
@@ -1352,18 +1399,18 @@ export default function App() {
 
         {counsellorView === 'chat' && selectedCounsellor && (
           <div style={styles.chatBody}>
-            <div style={{ ...styles.chatAvatarLarge, backgroundColor: `${selectedCounsellor.color}22` }}>{selectedCounsellor.avatar}</div>
+            <div style={{ ...styles.chatAvatarLarge, backgroundColor: `${selectedCounsellor.color}22` }}><Icon name={selectedCounsellor.avatar} size={40} color={selectedCounsellor.color} /></div>
             <h3 style={styles.chatCounsellorName}>{selectedCounsellor.name}</h3>
             <p style={styles.chatCounsellorRole}>{selectedCounsellor.role}</p>
             {chatMessages.map((msg, i) => <div key={i} style={styles.chatSystemBubble}>{msg.text}</div>)}
-            <button style={{ ...styles.bookSessionBtn, maxWidth: '280px' }} onClick={() => handleBookSessionClick(selectedCounsellor)}>📅 Book a session instead</button>
+            <button style={{ ...styles.bookSessionBtn, maxWidth: '280px' }} onClick={() => handleBookSessionClick(selectedCounsellor)}><Icon name="calendar" size={14} color={themeColors.purple} /> Book a session instead</button>
           </div>
         )}
 
         {counsellorView === 'booking' && selectedCounsellor && (
           <div style={styles.bookingBody}>
             <div style={{ ...styles.bookingCounsellorBanner, backgroundColor: selectedCounsellor.color }}>
-              <div style={styles.bookingAvatarCircle}>{selectedCounsellor.avatar}</div>
+              <div style={styles.bookingAvatarCircle}><Icon name={selectedCounsellor.avatar} size={20} color="#FFFFFF" /></div>
               <div>
                 <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0 }}>{selectedCounsellor.name}</h3>
                 <p style={{ fontSize: '12.5px', margin: '2px 0 0 0', opacity: 0.9, fontWeight: '600' }}>{selectedCounsellor.role}</p>
@@ -1400,7 +1447,7 @@ export default function App() {
         {counsellorView === 'confirmation' && selectedCounsellor && (
           <div style={styles.confirmationBody}>
             <div style={styles.confirmationCard}>
-              <div style={styles.confirmationCheckCircle}>✓</div>
+              <div style={styles.confirmationCheckCircle}><Icon name="check" size={26} color="#16A34A" /></div>
               <h3 style={styles.confirmationTitle}>{editingSessionId ? 'Session Updated!' : 'Session Booked!'}</h3>
               <p style={styles.confirmationWithText}>With {selectedCounsellor.name}</p>
               <p style={styles.confirmationTimeText}>{selectedTime}</p>
@@ -1414,7 +1461,7 @@ export default function App() {
           <div style={styles.bookingBody}>
             {bookedSessions.length === 0 ? (
               <div style={styles.mySessionsEmptyState}>
-                <div style={{ fontSize: '32px', marginBottom: '10px' }}>📅</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="calendar" size={30} color="#999999" /></div>
                 <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>No sessions booked yet</p>
                 <p style={{ fontSize: '12.5px', marginTop: '6px' }}>Book a session with a counsellor to see it here.</p>
               </div>
@@ -1422,7 +1469,7 @@ export default function App() {
               bookedSessions.map(session => (
                 <div key={session.id} style={styles.sessionCard}>
                   <div style={styles.sessionCardTopRow}>
-                    <div style={{ ...styles.sessionCardAvatar, backgroundColor: `${session.counsellorColor}22` }}>{session.counsellorAvatar}</div>
+                    <div style={{ ...styles.sessionCardAvatar, backgroundColor: `${session.counsellorColor}22` }}><Icon name={session.counsellorAvatar} size={18} color={session.counsellorColor} /></div>
                     <div>
                       <p style={styles.sessionCardName}>{session.counsellorName}</p>
                       <p style={styles.sessionCardRole}>{session.counsellorRole}</p>
@@ -1430,7 +1477,7 @@ export default function App() {
                     <span style={styles.sessionTimeBadge}>{session.time}</span>
                   </div>
                   {session.note && <p style={styles.sessionNoteText}>"{session.note}"</p>}
-                  {session.anonymous && <span style={styles.sessionAnonTag}>🔒 Anonymous</span>}
+                  {session.anonymous && <span style={styles.sessionAnonTag}><Icon name="lock" size={11} color="#888888" /> Anonymous</span>}
                   {confirmDeleteId === session.id ? (
                     <div style={styles.deleteConfirmRow}>
                       <p style={styles.deleteConfirmText}>Cancel this session?</p>
@@ -1441,8 +1488,8 @@ export default function App() {
                     </div>
                   ) : (
                     <div style={styles.sessionActionRow}>
-                      <button style={styles.sessionEditBtn} onClick={() => handleEditSession(session)}>✏️ Edit</button>
-                      <button style={styles.sessionDeleteBtn} onClick={() => setConfirmDeleteId(session.id)}>🗑️ Cancel</button>
+                      <button style={styles.sessionEditBtn} onClick={() => handleEditSession(session)}><Icon name="pencil" size={13} color={themeColors.purple} /> Edit</button>
+                      <button style={styles.sessionDeleteBtn} onClick={() => setConfirmDeleteId(session.id)}><Icon name="trash" size={13} color="#DC2626" /> Cancel</button>
                     </div>
                   )}
                 </div>
@@ -1463,7 +1510,7 @@ export default function App() {
       <div style={styles.authCardWrapper}>
         <div style={{ ...styles.authMainCard, maxWidth: '420px', textAlign: 'left' }}>
           <h2 style={{ ...styles.authCardTitle, textAlign: 'left' }}>My Profile</h2>
-          <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 18px 0', lineHeight: '1.4' }}>
+          <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 18px 0', lineHeight: '1.4', textAlign: 'justify' }}>
             Manage your account details below. Changes are saved straight to your account.
           </p>
 
@@ -1483,7 +1530,7 @@ export default function App() {
 
           <div style={{ borderTop: '1px solid #EAEAEA', marginTop: '16px', paddingTop: '18px' }}>
             <p style={{ fontSize: '13px', fontWeight: '800', color: '#DC2626', margin: '0 0 8px 0' }}>Danger Zone</p>
-            <p style={{ fontSize: '12px', color: '#888888', margin: '0 0 14px 0', lineHeight: '1.45' }}>
+            <p style={{ fontSize: '12px', color: '#888888', margin: '0 0 14px 0', lineHeight: '1.45', textAlign: 'justify' }}>
               Deleting your account permanently removes your profile, booked counsellor sessions, and support requests. This cannot be undone.
             </p>
             {confirmDeleteAccount ? (
@@ -1498,10 +1545,10 @@ export default function App() {
               </div>
             ) : (
               <button
-                style={{ width: '100%', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '22px', padding: '11px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer' }}
+                style={{ width: '100%', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '22px', padding: '11px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => setConfirmDeleteAccount(true)}
               >
-                🗑️ Delete My Account
+                <Icon name="trash" size={14} color="#DC2626" /> Delete My Account
               </button>
             )}
           </div>
@@ -1541,7 +1588,7 @@ export default function App() {
         <div style={styles.navAuthButtons}>
           {currentUser ? (
             <>
-              <span style={styles.userProfileTag}>Hi, {currentUser.fullName || 'User'} 👋</span>
+              <span style={styles.userProfileTag}>Hi, {currentUser.fullName || 'User'}</span>
               <button style={styles.navLoginBtn} onClick={openProfile}>My Profile</button>
               <button style={styles.navLoginBtn} onClick={handleLogout}>Logout</button>
             </>
@@ -1574,14 +1621,17 @@ export default function App() {
             </section>
             <section style={styles.landingGridSection}>
               <div style={styles.landingInfoCard}>
+                <div style={styles.landingCardIcon}><Icon name="shield" size={22} color={themeColors.purple} /></div>
                 <h4 style={styles.landingCardTitle}>Your Privacy, Always</h4>
                 <p style={styles.landingCardDesc}>Everything you do here stays between you and Big Sister. No names shared, no data sold — ever.</p>
               </div>
               <div style={styles.landingInfoCard}>
+                <div style={styles.landingCardIcon}><Icon name="handshake" size={22} color={themeColors.purple} /></div>
                 <h4 style={styles.landingCardTitle}>Real Support, Not Just Advice</h4>
                 <p style={styles.landingCardDesc}>Request sanitary pads, school fees help, meals, and mental health support — from partners who actually provide them.</p>
               </div>
               <div style={styles.landingInfoCard}>
+                <div style={styles.landingCardIcon}><Icon name="stethoscope" size={22} color={themeColors.purple} /></div>
                 <h4 style={styles.landingCardTitle}>Talk to Someone Who Gets It</h4>
                 <p style={styles.landingCardDesc}>Book a private session with a counsellor who understands the pressures girls in Uganda face every day.</p>
               </div>
@@ -1611,7 +1661,7 @@ export default function App() {
                 <div style={styles.inputGroup}>
                   <label style={styles.inputLabel}>Password</label>
                   <input type={showPassword ? 'text' : 'password'} placeholder="Enter your password" style={styles.inputField} value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
-                  <span onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '14px', bottom: '9px', cursor: 'pointer', color: '#888888', fontSize: '13px' }}>{showPassword ? '👁️' : '👁️‍🗨️'}</span>
+                  <span onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '14px', bottom: '9px', cursor: 'pointer', color: '#888888', display: 'flex', alignItems: 'center' }}><Icon name={showPassword ? 'shield' : 'lock'} size={14} color="#888888" /></span>
                 </div>
                 <button type="submit" style={styles.authSubmitBtn}>Sign In</button>
               </form>
@@ -1619,7 +1669,7 @@ export default function App() {
                 <span style={{ color: themeColors.purple, fontWeight: '600', cursor: 'pointer' }} onClick={() => setCurrentView('forgot')}>Forgot password?</span>
                 <div style={{ color: '#555555' }}>No account? <span style={{ color: themeColors.purple, fontWeight: '700', cursor: 'pointer' }} onClick={() => setCurrentView('signup')}>Join for free</span></div>
               </div>
-              <div style={styles.privacyFooterText}>Your data is kept private and secure 🔒</div>
+              <div style={styles.privacyFooterText}><Icon name="lock" size={12} color="#8A8A8A" /> Your data is kept private and secure</div>
             </div>
           </div>
         )}
@@ -1649,7 +1699,7 @@ export default function App() {
                 <button type="submit" style={styles.authSubmitBtn}>Create Account</button>
               </form>
               <div style={{ fontSize: '12.5px', color: '#555555', marginTop: '8px' }}>Already have an account? <span style={{ color: themeColors.purple, fontWeight: '700', cursor: 'pointer' }} onClick={() => setCurrentView('signin')}>Sign in</span></div>
-              <div style={styles.privacyFooterText}>Your data is kept private and secure 🔒</div>
+              <div style={styles.privacyFooterText}><Icon name="lock" size={12} color="#8A8A8A" /> Your data is kept private and secure</div>
             </div>
           </div>
         )}
@@ -1662,13 +1712,13 @@ export default function App() {
           <div style={styles.authCardWrapper}>
             <div style={styles.authMainCard}>
               <h2 style={styles.authCardTitle}>Reset your password</h2>
-              <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 16px 0', lineHeight: '1.4' }}>Enter your email address and we'll send you a link to reset your password.</p>
+              <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 16px 0', lineHeight: '1.4', textAlign: 'justify' }}>Enter your email address and we'll send you a link to reset your password.</p>
               <form onSubmit={e => { e.preventDefault(); showToast('Reset link sent — check your inbox.', 'success'); }}>
                 <div style={styles.inputGroup}><label style={styles.inputLabel}>Email Address</label><input type="email" placeholder="you@example.com" style={styles.inputField} required /></div>
                 <button type="submit" style={styles.authSubmitBtn}>Send Reset Link</button>
               </form>
               <div style={{ fontSize: '12.5px', color: '#555555' }}>Remembered it? <span style={{ color: themeColors.purple, fontWeight: '700', cursor: 'pointer' }} onClick={() => setCurrentView('signin')}>Sign in</span></div>
-              <div style={styles.privacyFooterText}>Your data is kept private and secure 🔒</div>
+              <div style={styles.privacyFooterText}><Icon name="lock" size={12} color="#8A8A8A" /> Your data is kept private and secure</div>
             </div>
           </div>
         )}
@@ -1679,17 +1729,17 @@ export default function App() {
             <div style={{ ...styles.authMainCard, maxWidth: '480px', textAlign: 'left' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: themeColors.purple, margin: '0 0 12px 0' }}>About Big Sister</h2>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>The Platform</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0' }}>Big Sister is a free, private platform that gives teenage girls in Uganda access to reproductive health information, professional counselling, and tangible support like sanitary pads, school fees, and food assistance.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: 'justify' }}>Big Sister is a free, private platform that gives teenage girls in Uganda access to reproductive health information, professional counselling, and tangible support like sanitary pads, school fees, and food assistance.</p>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>Our Core Mission</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0' }}>To reduce teenage pregnancy rates in Uganda by giving every girl easy, private access to health education, counselling, and the economic support she needs to stay in school and make safe decisions.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: 'justify' }}>To reduce teenage pregnancy rates in Uganda by giving every girl easy, private access to health education, counselling, and the economic support she needs to stay in school and make safe decisions.</p>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>Development Team</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 12px 0' }}>Built by Computing students at Uganda Christian University, reviewed by Mr. Kisomose Tony.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 12px 0', textAlign: 'justify' }}>Built by Computing students at Uganda Christian University, reviewed by Mr. Kisomose Tony.</p>
               <div style={{ borderTop: '1px solid #EAEAEA', paddingTop: '10px', marginTop: '12px', fontSize: '12.5px' }}>
                 <a
                   href="mailto:info@bigsister.ucu.ac.ug"
                   style={{ color: themeColors.purple, fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  ✉️ info@bigsister.ucu.ac.ug
+                  <Icon name="mail" size={14} color={themeColors.purple} /> info@bigsister.ucu.ac.ug
                 </a>
               </div>
             </div>
@@ -1700,35 +1750,35 @@ export default function App() {
         {currentView === 'dashboard' && (
           <div style={styles.dashboardWrapper} className="no-scrollbar">
             <div style={styles.dashboardWelcomeBar}>
-              <div style={styles.dashboardWelcomeText}>Welcome back, {currentUser?.fullName?.split(' ')[0] || 'there'} 👋</div>
+              <div style={styles.dashboardWelcomeText}>Welcome back, {currentUser?.fullName?.split(' ')[0] || 'there'}</div>
             </div>
             <div style={styles.dashboardMainView}>
               <div style={styles.tipOfTheDayCard}>
-                <span style={{ fontSize: '20px' }}>💡</span>
+                <Icon name="lightbulb" size={20} color="#FFFFFF" />
                 <div>
                   <div style={styles.tipTitle}>Health Tip of the Day</div>
                   <p style={styles.tipBody}>{language === 'English' ? "Stay hydrated! Drinking enough water helps regulate your menstrual cycle and reduces cramps." : "Nywa amazzi agamala! Okunywa amazzi amangi kukuuyamba okutereeza n'okukendeeza obulumi bw'omukyala."}</p>
                 </div>
               </div>
               <div style={styles.featuresGridContainer}>
-                <div style={{ ...styles.featureCard, backgroundColor: '#CCFBF1' }} onClick={() => showToast('AI Health Bot coming soon!', 'info')}><span style={styles.featureIcon}>💬</span><h3 style={{ ...styles.featureTitle, color: '#0D9488' }}>Ask AI Health Bot</h3><p style={{ ...styles.featureDesc, color: '#115E59' }}>Get instant, private answers to your health questions</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#DBEAFE' }} onClick={() => { openSupportHub(); setCurrentView('support'); }}><span style={styles.featureIcon}>🤝</span><h3 style={{ ...styles.featureTitle, color: '#2563EB' }}>Get Support</h3><p style={{ ...styles.featureDesc, color: '#1E40AF' }}>Access sanitary pads, school fees, food, and more</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#F3E8FF' }} onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); }}><span style={styles.featureIcon}>🧑‍⚕️</span><h3 style={{ ...styles.featureTitle, color: '#9333EA' }}>Talk to Counsellor</h3><p style={{ ...styles.featureDesc, color: '#6B21A8' }}>Book a session or chat live with a professional</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FEF3C7' }} onClick={() => showToast('Skills & learning portal coming soon!', 'info')}><span style={styles.featureIcon}>🎓</span><h3 style={{ ...styles.featureTitle, color: '#D97706' }}>Learn Skills</h3><p style={{ ...styles.featureDesc, color: '#92400E' }}>Watch videos, earn certificates, find opportunities</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FEE2E2' }} onClick={() => showToast('Locating nearest clinic networks…', 'info')}><span style={styles.featureIcon}>🚨</span><h3 style={{ ...styles.featureTitle, color: '#DC2626' }}>Emergency Help</h3><p style={{ ...styles.featureDesc, color: '#991B1B' }}>Find nearby clinics and emergency contacts</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FCE7F3' }} onClick={() => showToast('Health tracker coming soon!', 'info')}><span style={styles.featureIcon}>📊</span><h3 style={{ ...styles.featureTitle, color: '#DB2777' }}>Track Health</h3><p style={{ ...styles.featureDesc, color: '#9D174D' }}>Monitor your cycle, symptoms, and health trends</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#E0F2FE' }} onClick={() => showToast('Loading educational content library…', 'info')}><span style={styles.featureIcon}>📚</span><h3 style={{ ...styles.featureTitle, color: '#0284C7' }}>Explore Topics</h3><p style={{ ...styles.featureDesc, color: '#075985' }}>Learn about your body, health, and safe decisions</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#CCFBF1' }} onClick={() => setCurrentView('aibot')}><span style={styles.featureIcon}><Icon name="chat" size={20} color="#0D9488" /></span><h3 style={{ ...styles.featureTitle, color: '#0D9488' }}>Ask AI Health Bot</h3><p style={{ ...styles.featureDesc, color: '#115E59' }}>Get instant, private answers to your health questions</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#DBEAFE' }} onClick={() => { openSupportHub(); setCurrentView('support'); }}><span style={styles.featureIcon}><Icon name="handshake" size={20} color="#2563EB" /></span><h3 style={{ ...styles.featureTitle, color: '#2563EB' }}>Get Support</h3><p style={{ ...styles.featureDesc, color: '#1E40AF' }}>Access sanitary pads, school fees, food, and more</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#F3E8FF' }} onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); }}><span style={styles.featureIcon}><Icon name="stethoscope" size={20} color="#9333EA" /></span><h3 style={{ ...styles.featureTitle, color: '#9333EA' }}>Talk to Counsellor</h3><p style={{ ...styles.featureDesc, color: '#6B21A8' }}>Book a session or chat live with a professional</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#FEF3C7' }} onClick={() => setCurrentView('skills')}><span style={styles.featureIcon}><Icon name="cap" size={20} color="#D97706" /></span><h3 style={{ ...styles.featureTitle, color: '#D97706' }}>Learn Skills</h3><p style={{ ...styles.featureDesc, color: '#92400E' }}>Watch videos, earn certificates, find opportunities</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#FEE2E2' }} onClick={() => setCurrentView('emergency')}><span style={styles.featureIcon}><Icon name="alert" size={20} color="#DC2626" /></span><h3 style={{ ...styles.featureTitle, color: '#DC2626' }}>Emergency Help</h3><p style={{ ...styles.featureDesc, color: '#991B1B' }}>Find nearby clinics and emergency contacts</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#FCE7F3' }} onClick={() => setCurrentView('track')}><span style={styles.featureIcon}><Icon name="chart" size={20} color="#DB2777" /></span><h3 style={{ ...styles.featureTitle, color: '#DB2777' }}>Track Health</h3><p style={{ ...styles.featureDesc, color: '#9D174D' }}>Monitor your cycle, symptoms, and health trends</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#E0F2FE' }} onClick={() => setCurrentView('topics')}><span style={styles.featureIcon}><Icon name="book" size={20} color="#0284C7" /></span><h3 style={{ ...styles.featureTitle, color: '#0284C7' }}>Explore Topics</h3><p style={{ ...styles.featureDesc, color: '#075985' }}>Learn about your body, health, and safe decisions</p></div>
               </div>
 
               <div style={styles.quickAccessSection}>
                 <h3 style={styles.quickAccessTitle}>Quick Access</h3>
                 <div style={styles.quickAccessRow}>
                   {[
-                    { icon: '🩸', label: 'Period Tracker', bg: '#FCE0EC', color: '#DB2777', onClick: () => showToast('Period tracker coming soon!', 'info') },
-                    { icon: '💗', label: 'Symptom Checker', bg: '#FDE4EA', color: '#E11D48', onClick: () => showToast('Symptom checker coming soon!', 'info') },
-                    { icon: '📍', label: 'Nearby Services', bg: '#DBEAFE', color: '#2563EB', onClick: () => showToast('Locating nearby services…', 'info') },
-                    { icon: '👥', label: 'Community', bg: '#F3E8FF', color: '#9333EA', onClick: () => showToast('Community coming soon!', 'info') },
-                    { icon: '🏅', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => showToast('Certificates coming soon!', 'info') },
+                    { icon: 'droplet', label: 'Period Tracker', bg: '#FCE0EC', color: '#DB2777', onClick: () => setCurrentView('track') },
+                    { icon: 'heart', label: 'Symptom Checker', bg: '#FDE4EA', color: '#E11D48', onClick: () => setCurrentView('track') },
+                    { icon: 'pin', label: 'Nearby Services', bg: '#DBEAFE', color: '#2563EB', onClick: () => setCurrentView('emergency') },
+                    { icon: 'users', label: 'Community', bg: '#F3E8FF', color: '#9333EA', onClick: () => showToast('Community coming soon!', 'info') },
+                    { icon: 'badge', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => setCurrentView('skills') },
                   ].map(item => (
                     <div
                       key={item.label}
@@ -1737,7 +1787,7 @@ export default function App() {
                       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 18px rgba(0,0,0,0.07)'; }}
                       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,0,0,0.02)'; }}
                     >
-                      <div style={styles.quickAccessIconWrap(item.bg)}>{item.icon}</div>
+                      <div style={styles.quickAccessIconWrap(item.bg)}><Icon name={item.icon} size={15} color={item.color} /></div>
                       <span>{item.label}</span>
                     </div>
                   ))}
