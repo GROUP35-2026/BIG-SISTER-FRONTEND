@@ -654,6 +654,22 @@ export default function App() {
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [deletingAccount, setDeletingAccount]       = useState(false);
 
+  // ── AI Health Bot feature state ────────────────────────────────────────────
+  const [aiBotMessages, setAiBotMessages] = useState([
+    { from: 'bot', text: "Hi! I'm your Big Sister AI Health Bot. Ask me anything about your body, health, or puberty. Your conversation is completely private." }
+  ]);
+  const [aiBotInput, setAiBotInput] = useState('');
+
+  // ── Track Health feature state ─────────────────────────────────────────────
+  const [trackHealthTab, setTrackHealthTab] = useState('calendar');
+  const [loggedSymptoms, setLoggedSymptoms] = useState([]);
+
+  // ── Emergency Help feature state ───────────────────────────────────────────
+  const [openCrisisTopic, setOpenCrisisTopic] = useState(null);
+
+  // ── Explore Topics feature state ───────────────────────────────────────────
+  const [selectedTopic, setSelectedTopic] = useState(null);
+
   const TIME_SLOTS = ['9:00 AM', '10:30 AM', '12:00 PM', '2:00 PM', '3:30 PM', '5:00 PM'];
 
   const counsellors = [
@@ -705,6 +721,52 @@ export default function App() {
     },
   ];
 
+  // ── AI Health Bot data ───────────────────────────────────────────────────────
+  const aiBotQuickQuestions = [
+    { q: 'Signs my period is coming?', a: "A few common signs your period may be coming soon include mild cramps, bloating, breast tenderness, mood changes, and lower back ache. These usually start 1–5 days before your period begins. Everyone's body is a little different, so it helps to notice your own patterns over a few cycles." },
+    { q: 'Is cramping normal?', a: "Yes, mild to moderate cramping during your period is very normal — it's caused by your uterus contracting. A warm compress, gentle stretching, and staying hydrated can help. If cramps are so severe they stop you from going about your day, it's worth talking to a health worker or counsellor." },
+    { q: 'What is puberty?', a: "Puberty is the time when your body grows and changes from a child's body into an adult's body. It usually starts between ages 8–13 and includes things like breast development, your first period, growth spurts, and new emotions. It's a completely normal part of growing up." },
+    { q: 'How to prevent infections?', a: "Change your pad or cloth every 4–6 hours, wash your hands before and after, wear cotton underwear, and keep the area clean and dry. Avoid scented soaps, as they can upset your body's natural balance." },
+    { q: 'Why am I moody before period?', a: "Hormone levels shift in the days before your period, which can affect your mood — this is often called PMS. Feeling more sensitive, irritable, or teary is common. Gentle exercise, enough sleep, and talking to someone you trust can help you feel steadier." },
+    { q: 'How to handle stress?', a: "Try deep breathing, talking to someone you trust, taking short breaks, and getting enough sleep. Writing down what's on your mind can also help. If stress feels like too much to carry alone, our counsellors are here for you." },
+  ];
+
+  // ── Learn Skills data ────────────────────────────────────────────────────────
+  const skillsCourses = [
+    { id: 'tailoring', name: 'Tailoring & Fashion', desc: 'Learn to sew clothes, alter garments, and start your own business', weeks: '6 weeks', progress: 0,  color: '#EC4899' },
+    { id: 'baking',    name: 'Baking & Pastry',     desc: 'Master breads, cakes, and snacks — earn money from home',        weeks: '4 weeks', progress: 25, color: '#F59E0B' },
+    { id: 'hair',      name: 'Hair Styling',        desc: 'Natural hair care, braiding, and salon business skills',         weeks: '5 weeks', progress: 60, color: '#9333EA' },
+    { id: 'digital',   name: 'Digital Skills',      desc: 'Phone literacy, social media business, and basic computing',     weeks: '3 weeks', progress: 0,  color: '#2563EB' },
+    { id: 'garden',    name: 'Kitchen Gardening',   desc: 'Grow your own vegetables, herbs, and learn about nutrition',     weeks: '4 weeks', progress: 0,  color: '#16A34A' },
+    { id: 'craft',     name: 'Craft & Beadwork',    desc: 'Make jewellery, bags, and crafts to sell locally and online',    weeks: '3 weeks', progress: 0,  color: '#06B6D4' },
+  ];
+
+  // ── Emergency Help data ──────────────────────────────────────────────────────
+  const emergencyContacts = [
+    { name: 'Police Emergency',           number: '999 / 112',      hours: '24/7',               icon: 'phone',       color: '#2563EB' },
+    { name: 'Uganda Red Cross Ambulance', number: '0800-113-116',   hours: '24/7',               icon: 'heart',       color: '#DC2626' },
+    { name: 'MIFUMI GBV Hotline',         number: '0800-198-028',   hours: '24/7 · Free call',   icon: 'shield',      color: '#9333EA' },
+    { name: 'Uganda Child Helpline',      number: '116',            hours: '24/7 · Free call',   icon: 'users',       color: '#DB2777' },
+    { name: 'Marie Stopes Uganda',        number: '0800-112-244',   hours: 'Mon–Sat 8am–5pm',    icon: 'stethoscope', color: '#16A34A' },
+  ];
+
+  const crisisTopics = [
+    { id: 'abuse',     label: 'Sexual Abuse / Assault',   icon: 'shield', content: "You are not to blame. Get to a safe place if you can, and reach out to the MIFUMI GBV Hotline or Police Emergency line above. If you're able to, seek medical care as soon as possible. A counsellor on this app can also support you confidentially." },
+    { id: 'pregnancy', label: 'Pregnancy Concerns',       icon: 'heart',  content: "If you think you might be pregnant or are worried about a pregnancy, you're not alone and there is support available. Marie Stopes Uganda can offer confidential medical advice, and our counsellors are here to talk through your options and feelings." },
+    { id: 'unsafe',    label: 'Feeling Unsafe at Home',   icon: 'home',   content: "If you ever feel unsafe at home, try to identify a trusted adult or neighbour you can go to. The Uganda Child Helpline (116) is free and confidential, and can help connect you with support and, if needed, a safe place to stay." },
+    { id: 'mental',    label: 'Mental Health Crisis',     icon: 'chat',   content: "If you're struggling to cope or having a hard time emotionally, please reach out right away — you deserve support. Talk to a trusted adult, call the MIFUMI or Child Helpline above, or open a chat with one of our counsellors." },
+  ];
+
+  // ── Explore Topics data ──────────────────────────────────────────────────────
+  const exploreTopics = [
+    { id: 'menstruation', label: 'Menstruation',           subtitle: 'Understanding your cycle',   time: '5 min', articles: 3, icon: 'droplet',   gradient: 'linear-gradient(135deg, #E61B9B 0%, #FF6B9D 100%)', body: "Your menstrual cycle is a natural process where your body prepares for a potential pregnancy each month, and sheds the uterine lining if pregnancy doesn't happen — this is your period. A typical cycle lasts around 21–35 days, and periods usually last 3–7 days. Tracking your cycle can help you predict your period, notice patterns in your mood and energy, and spot anything unusual worth mentioning to a health worker." },
+    { id: 'puberty',      label: 'Puberty & Body Changes', subtitle: 'Your body is growing',        time: '6 min', articles: 2, icon: 'sparkle',    gradient: 'linear-gradient(135deg, #9023F0 0%, #C026D3 100%)', body: "Puberty is your body's natural transition from childhood to adulthood, usually starting between ages 8 and 13. You may notice breast development, body hair, growth spurts, your first period, and new emotions. These changes happen at different times and speeds for everyone — there's no single 'right' timeline, and it's completely normal to have questions." },
+    { id: 'sexed',        label: 'Sex Education',          subtitle: 'Know your rights & facts',    time: '7 min', articles: 3, icon: 'book',       gradient: 'linear-gradient(135deg, #06B6D4 0%, #0EA5E9 100%)', body: "Understanding your body and your rights helps you make informed, confident decisions. This includes knowing how reproduction works, what consent means, how to protect yourself from infections and unintended pregnancy, and where to get accurate, judgement-free information. You always have the right to ask questions and get honest answers." },
+    { id: 'relationships',label: 'Relationships',          subtitle: 'Healthy love & friendships',  time: '5 min', articles: 2, icon: 'heart',      gradient: 'linear-gradient(135deg, #DB2777 0%, #F472B6 100%)', body: "Healthy relationships, whether with friends, family, or partners, are built on respect, trust, and honest communication. It's important to recognise the difference between healthy support and controlling or disrespectful behaviour. You deserve relationships that make you feel safe, valued, and free to be yourself." },
+    { id: 'stories',      label: 'Real Stories',           subtitle: 'From girls like you',         time: '4 min', articles: 2, icon: 'chat',       gradient: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)', body: "Hearing from other girls who've faced similar challenges — from navigating school pressure to managing their first period — can remind you that you're not alone. These shared stories are anonymised and collected from girls across Uganda who wanted to help others feel understood." },
+    { id: 'mentalwellness',label: 'Mental Wellness',       subtitle: 'Your mind matters too',       time: '5 min', articles: 2, icon: 'lightbulb', gradient: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)', body: "Taking care of your mental health is just as important as taking care of your body. Feelings of stress, sadness, or worry are normal, but if they start affecting your daily life, it helps to talk to someone you trust. Simple habits like enough sleep, movement, and honest conversations can make a real difference." },
+  ];
+
   const themeColors = {
     magenta:    '#D81B9E',
     purple:     '#9023F0',
@@ -717,6 +779,24 @@ export default function App() {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // AI HEALTH BOT HANDLERS
+  // ══════════════════════════════════════════════════════════════════════════
+  const handleAiBotSend = (customText) => {
+    const text = (customText || aiBotInput).trim();
+    if (!text) return;
+    const preset = aiBotQuickQuestions.find(item => item.q === text);
+    const userMsg = { from: 'user', text };
+    const botReply = {
+      from: 'bot',
+      text: preset
+        ? preset.a
+        : "Thanks for sharing that. While I can't replace a doctor, this is a completely normal thing to wonder about. For anything specific to your body, it's always best to also check with a health worker or one of our counsellors. Is there anything else you'd like to ask?"
+    };
+    setAiBotMessages(prev => [...prev, userMsg, botReply]);
+    setAiBotInput('');
+  };
 
   // ══════════════════════════════════════════════════════════════════════════
   // COUNSELLOR HANDLERS
@@ -1564,6 +1644,332 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
+  // AI HEALTH BOT FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderAIBotFeature = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden', boxSizing: 'border-box', backgroundColor: '#F0FDFA' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)', padding: '18px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+        <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="sparkle" size={17} color="#FFFFFF" />
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#FFFFFF' }}>AI Health Bot</h2>
+          </div>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Always available · Always private</p>
+        </div>
+        <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#0D9488" /> Private</span>
+      </div>
+
+      <div style={{ padding: '16px 32px 0 32px', display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0, boxSizing: 'border-box' }}>
+        {aiBotQuickQuestions.map(item => (
+          <span key={item.q} onClick={() => handleAiBotSend(item.q)} style={{ fontSize: '12.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', border: '1.5px solid #99F6E4', borderRadius: '18px', padding: '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{item.q}</span>
+        ))}
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 32px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }} className="no-scrollbar">
+        {aiBotMessages.map((msg, i) => (
+          <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexDirection: msg.from === 'user' ? 'row-reverse' : 'row' }}>
+            {msg.from === 'bot' && <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="sparkle" size={14} color="#FFFFFF" /></div>}
+            <div style={{ maxWidth: '65%', backgroundColor: msg.from === 'user' ? '#0D9488' : '#FFFFFF', color: msg.from === 'user' ? '#FFFFFF' : '#333333', borderRadius: '16px', padding: '12px 16px', fontSize: '13.5px', lineHeight: '1.5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textAlign: 'justify' }}>{msg.text}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ padding: '14px 32px', flexShrink: 0, backgroundColor: '#F0FDFA', borderTop: '1px solid #CCFBF1', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input type="text" placeholder="Ask your health question..." value={aiBotInput} onChange={e => setAiBotInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiBotSend(); }} style={{ flex: 1, padding: '12px 18px', borderRadius: '24px', border: '1.5px solid #99F6E4', backgroundColor: '#FFFFFF', fontSize: '13px', color: '#333333', outline: 'none', boxSizing: 'border-box' }} />
+          <button onClick={() => handleAiBotSend()} style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: '#0D9488', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}><Icon name="send" size={17} color="#FFFFFF" /></button>
+        </div>
+        <p style={{ textAlign: 'center', fontSize: '11px', color: '#0D9488', fontWeight: '600', margin: '10px 0 0 0' }}>Not a replacement for professional medical advice</p>
+      </div>
+    </div>
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // LEARN SKILLS FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderSkillsFeature = () => {
+    const continueCourse = skillsCourses.find(c => c.progress > 0 && c.progress < 100);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+          <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#D97706', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#D97706" /></button>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#D97706', margin: 0 }}>Learn Skills</h2>
+            <p style={{ fontSize: '12.5px', color: '#B45309', margin: 0, fontWeight: '500' }}>Free courses · Earn certificates</p>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 32px', boxSizing: 'border-box' }}>
+          {continueCourse && (
+            <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)', borderRadius: '18px', padding: '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '14px' }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9 }}>Continue learning</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800' }}>{continueCourse.name}</p>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', opacity: 0.9 }}>{continueCourse.progress}% complete</p>
+                </div>
+                <button onClick={() => showToast(`Continuing ${continueCourse.name}…`, 'info')} style={{ backgroundColor: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '20px', padding: '9px 20px', color: '#FFFFFF', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Continue →</button>
+              </div>
+              <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${continueCourse.progress}%`, height: '100%', backgroundColor: '#FFFFFF', borderRadius: '4px' }} />
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            {skillsCourses.map(course => (
+              <div key={course.id} onClick={() => showToast(`Opening ${course.name}…`, 'info')} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '13px', backgroundColor: `${course.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: course.color, fontWeight: '800', fontSize: '16px', marginBottom: '12px' }}>{course.name.charAt(0)}</div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: '800', color: '#1A1A1A' }}>{course.name}</h4>
+                <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#888888', lineHeight: '1.4' }}>{course.desc}</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#999999', display: 'flex', alignItems: 'center', gap: '5px' }}><Icon name="calendar" size={12} color="#999999" /> {course.weeks}</span>
+                  <Icon name="badge" size={15} color={course.color} />
+                </div>
+                {course.progress > 0 && (
+                  <div style={{ height: '5px', backgroundColor: '#F0F0F0', borderRadius: '4px', overflow: 'hidden', marginTop: '10px' }}>
+                    <div style={{ width: `${course.progress}%`, height: '100%', backgroundColor: course.color, borderRadius: '4px' }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ backgroundColor: '#FEF3C7', borderRadius: '16px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <Icon name="badge" size={20} color="#D97706" />
+            <div>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#92400E' }}>Earn a Certificate</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#92400E', fontWeight: '500' }}>Complete any course to earn a recognised skills certificate you can use for jobs.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // TRACK HEALTH FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderTrackHealthFeature = () => {
+    const weekDays = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const juneStartOffset = 1; // June 1, 2026 falls on a Monday
+    const juneCalendarCells = [...Array(juneStartOffset).fill(null), ...Array.from({ length: 30 }, (_, i) => i + 1)];
+    const getDayStyle = (day) => {
+      if (day === null) return { background: 'transparent' };
+      if (day >= 1 && day <= 5) return { background: '#E61B9B', color: '#FFFFFF', fontWeight: '800' };
+      if (day === 6) return { background: '#FBD5EC', color: '#C0288E', fontWeight: '700' };
+      if (day === 12 || day === 13) return { background: '#DDD6FE', color: '#6D28D9', fontWeight: '700' };
+      return { background: '#FAFAFA', color: '#444444', fontWeight: '600' };
+    };
+    const symptomsList = ['Cramps', 'Headache', 'Bloating', 'Mood swings', 'Fatigue', 'Backache', 'Acne', 'Tender breasts'];
+    const toggleSymptom = (s) => setLoggedSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5FA' }} className="no-scrollbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+          <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#DB2777', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#DB2777" /></button>
+          <div style={{ flex: 1 }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#DB2777', margin: 0 }}>Track Health</h2>
+            <p style={{ fontSize: '12.5px', color: '#C0288E', margin: 0, fontWeight: '500' }}>Cycle & symptom tracker</p>
+          </div>
+          <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#DB2777', backgroundColor: '#FCE7F3', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#DB2777" /> Private</span>
+        </div>
+
+        <div style={{ padding: '0 32px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '18px', overflow: 'hidden' }}>
+            {[{ label: 'Cycle Day', value: '17' }, { label: 'Next Period', value: '12 days' }, { label: 'Avg Cycle', value: '28d' }].map((s, i) => (
+              <div key={s.label} style={{ flex: 1, padding: '16px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5E6F0' : 'none' }}>
+                <p style={{ margin: 0, fontSize: '11.5px', color: '#999999', fontWeight: '600' }}>{s.label}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '22px', color: '#DB2777', fontWeight: '800' }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '5px', marginBottom: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            {[{ key: 'calendar', label: 'Calendar' }, { key: 'symptoms', label: 'Symptoms' }, { key: 'insights', label: 'Insights' }].map(tab => (
+              <div key={tab.key} onClick={() => setTrackHealthTab(tab.key)} style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: '16px', cursor: 'pointer', fontSize: '13.5px', fontWeight: '700', backgroundColor: trackHealthTab === tab.key ? '#DB2777' : 'transparent', color: trackHealthTab === tab.key ? '#FFFFFF' : '#888888' }}>{tab.label}</div>
+            ))}
+          </div>
+
+          {trackHealthTab === 'calendar' && (
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ cursor: 'pointer', color: '#DB2777', display: 'flex' }}><Icon name="arrow-left" size={15} color="#DB2777" /></span>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#1A1A1A' }}>June 2026</h3>
+                <span style={{ cursor: 'pointer', color: '#DB2777', transform: 'rotate(180deg)', display: 'flex' }}><Icon name="arrow-left" size={15} color="#DB2777" /></span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '8px' }}>
+                {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '11.5px', fontWeight: '700', color: '#DB2777' }}>{d}</div>)}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
+                {juneCalendarCells.map((day, i) => (
+                  <div key={i} style={{ aspectRatio: '1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', ...getDayStyle(day) }}>{day || ''}</div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '18px', marginTop: '18px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11.5px', color: '#888888', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#E61B9B', display: 'inline-block' }} /> Period</span>
+                <span style={{ fontSize: '11.5px', color: '#888888', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#DDD6FE', display: 'inline-block' }} /> Fertile window</span>
+              </div>
+            </div>
+          )}
+
+          {trackHealthTab === 'symptoms' && (
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+              <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>How are you feeling today?</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {symptomsList.map(s => (
+                  <span key={s} onClick={() => toggleSymptom(s)} style={{ fontSize: '12.5px', fontWeight: '700', padding: '9px 16px', borderRadius: '18px', cursor: 'pointer', backgroundColor: loggedSymptoms.includes(s) ? '#DB2777' : '#FDF2F8', color: loggedSymptoms.includes(s) ? '#FFFFFF' : '#DB2777', border: `1.5px solid ${loggedSymptoms.includes(s) ? '#DB2777' : '#FBCFE8'}` }}>{s}</span>
+                ))}
+              </div>
+              <button onClick={() => showToast(loggedSymptoms.length ? 'Symptoms logged for today.' : 'Select at least one symptom to log.', loggedSymptoms.length ? 'success' : 'error')} style={{ width: '100%', marginTop: '18px', backgroundColor: '#DB2777', color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '12px', fontSize: '13.5px', fontWeight: '800', cursor: 'pointer' }}>Save Today's Log</button>
+            </div>
+          )}
+
+          {trackHealthTab === 'insights' && (
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+              <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Your cycle insights</p>
+              {[{ label: 'Cycle length has stayed consistent for 3 months', color: '#16A34A' }, { label: 'Cramps were logged most on Day 1–2', color: '#DB2777' }, { label: 'Mood dips are common 2 days before your period', color: '#9333EA' }].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i < 2 ? '1px solid #F5F5F5' : 'none' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: '#444444', fontWeight: '500' }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // EMERGENCY HELP FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderEmergencyFeature = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5F5' }} className="no-scrollbar">
+      <div style={{ background: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)', padding: '20px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+        <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.22)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icon name="alert" size={18} color="#FFFFFF" />
+            <h2 style={{ margin: 0, fontSize: '19px', fontWeight: '800', color: '#FFFFFF' }}>Emergency Help</h2>
+          </div>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>You are not alone. Help is here.</p>
+        </div>
+      </div>
+
+      <div style={{ padding: '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ backgroundColor: '#FEE2E2', border: '1.5px solid #FCA5A5', borderRadius: '14px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <Icon name="alert" size={16} color="#DC2626" />
+          <span style={{ fontSize: '13px', fontWeight: '700', color: '#991B1B' }}>In a life-threatening emergency, always call 999 or 112 first.</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
+          <a href="tel:999" style={{ textDecoration: 'none', backgroundColor: '#DC2626', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box' }}>
+            <Icon name="phone" size={20} color="#FFFFFF" />
+            <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#FFFFFF' }}>Call Now</span>
+            <span style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>999/112</span>
+          </a>
+          <div onClick={() => showToast('Finding clinics near you…', 'info')} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+            <Icon name="pin" size={20} color="#DC2626" />
+            <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Find Nearest Clinic</span>
+          </div>
+          <div onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); handleChatNow(counsellors[1]); }} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+            <Icon name="chat" size={20} color="#DC2626" />
+            <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Crisis Chat</span>
+          </div>
+        </div>
+
+        <h4 style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A', margin: '0 0 12px 0' }}>Emergency Contacts</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+          {emergencyContacts.map(c => (
+            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '14px 18px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', boxSizing: 'border-box' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: `${c.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={c.icon} size={17} color={c.color} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#1A1A1A' }}>{c.name}</p>
+                <p style={{ margin: '1px 0 0 0', fontSize: '15px', fontWeight: '800', color: c.color }}>{c.number}</p>
+                <p style={{ margin: '1px 0 0 0', fontSize: '11.5px', color: '#999999', fontWeight: '600' }}>{c.hours}</p>
+              </div>
+              <a href={`tel:${c.number.replace(/[^\d]/g, '')}`} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: `${c.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color, textDecoration: 'none', flexShrink: 0 }}><Icon name="phone" size={16} color={c.color} /></a>
+            </div>
+          ))}
+        </div>
+
+        <h4 style={{ fontSize: '13.5px', fontWeight: '800', color: '#DC2626', margin: '0 0 12px 0' }}>What To Do In A Crisis</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {crisisTopics.map(topic => (
+            <div key={topic.id} style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
+              <div onClick={() => setOpenCrisisTopic(openCrisisTopic === topic.id ? null : topic.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', cursor: 'pointer' }}>
+                <Icon name={topic.icon} size={16} color="#DC2626" />
+                <span style={{ flex: 1, fontSize: '13.5px', fontWeight: '700', color: '#1A1A1A' }}>{topic.label}</span>
+                <span style={{ display: 'flex', transform: openCrisisTopic === topic.id ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}><Icon name="arrow-left" size={13} color="#999999" /></span>
+              </div>
+              {openCrisisTopic === topic.id && (
+                <div style={{ padding: '0 18px 16px 18px' }}>
+                  <p style={{ margin: 0, fontSize: '12.5px', color: '#555555', lineHeight: '1.55', textAlign: 'justify' }}>{topic.content}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // EXPLORE TOPICS FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  const renderTopicsFeature = () => {
+    if (selectedTopic) {
+      const t = selectedTopic;
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+            <button onClick={() => setSelectedTopic(null)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
+            <h2 style={{ fontSize: '19px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>{t.label}</h2>
+          </div>
+          <div style={{ padding: '0 32px 32px 32px', boxSizing: 'border-box' }}>
+            <div style={{ borderRadius: '18px', background: t.gradient, padding: '28px 24px', color: '#FFFFFF', marginBottom: '18px' }}>
+              <Icon name={t.icon} size={28} color="#FFFFFF" />
+              <h3 style={{ margin: '10px 0 4px 0', fontSize: '19px', fontWeight: '800' }}>{t.label}</h3>
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{t.subtitle}</p>
+            </div>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+              <p style={{ margin: 0, fontSize: '13.5px', color: '#444444', lineHeight: '1.65', textAlign: 'justify' }}>{t.body}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
+        <div style={{ padding: '20px 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>Explore Topics</h2>
+            <p style={{ fontSize: '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' }}>Learn · Grow · Be informed</p>
+          </div>
+        </div>
+        <div style={{ padding: '0 32px 32px 32px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px', boxSizing: 'border-box' }}>
+          {exploreTopics.map(t => (
+            <div key={t.id} onClick={() => setSelectedTopic(t)} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
+              <div style={{ background: t.gradient, padding: '22px 20px', position: 'relative', minHeight: '70px', display: 'flex', alignItems: 'flex-start', boxSizing: 'border-box' }}>
+                <Icon name={t.icon} size={24} color="#FFFFFF" />
+                <span style={{ position: 'absolute', top: '14px', right: '16px', fontSize: '11px', fontWeight: '700', color: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.25)', padding: '3px 10px', borderRadius: '10px' }}>{t.time}</span>
+              </div>
+              <div style={{ padding: '16px 18px' }}>
+                <h4 style={{ margin: '0 0 3px 0', fontSize: '14.5px', fontWeight: '800', color: '#1A1A1A' }}>{t.label}</h4>
+                <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#888888', fontWeight: '500' }}>{t.subtitle}</p>
+                <span style={{ fontSize: '11.5px', fontWeight: '700', color: themeColors.purple, display: 'flex', alignItems: 'center', gap: '5px' }}><Icon name="book" size={12} color={themeColors.purple} /> {t.articles} articles</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
   // MAIN RENDER
   // ══════════════════════════════════════════════════════════════════════════
   const mainColumnContent = (
@@ -1594,8 +2000,8 @@ export default function App() {
             </>
           ) : (
             <>
-              <button style={styles.navLoginBtn} onClick={() => setCurrentView('signin')}>Login</button>
-              <button style={styles.navRegisterBtn} onClick={() => setCurrentView('signup')}>Register</button>
+              <button style={styles.navLoginBtn} onClick={() => setCurrentView('signin')}>Sign In</button>
+              <button style={styles.navRegisterBtn} onClick={() => setCurrentView('signup')}>Sign Up</button>
             </>
           )}
         </div>
@@ -1622,17 +2028,17 @@ export default function App() {
             <section style={styles.landingGridSection}>
               <div style={styles.landingInfoCard}>
                 <div style={styles.landingCardIcon}><Icon name="shield" size={22} color={themeColors.purple} /></div>
-                <h4 style={styles.landingCardTitle}>Your Privacy, Always</h4>
+                <h4 style={styles.landingCardTitle}>Your Privacy, Always!</h4>
                 <p style={styles.landingCardDesc}>Everything you do here stays between you and Big Sister. No names shared, no data sold — ever.</p>
               </div>
               <div style={styles.landingInfoCard}>
                 <div style={styles.landingCardIcon}><Icon name="handshake" size={22} color={themeColors.purple} /></div>
                 <h4 style={styles.landingCardTitle}>Real Support, Not Just Advice</h4>
-                <p style={styles.landingCardDesc}>Request sanitary pads, school fees help, meals, and mental health support — from partners who actually provide them.</p>
+                <p style={styles.landingCardDesc}>Request sanitary pads, school fees help, meals, and mental health support from partners who actually provide them.</p>
               </div>
               <div style={styles.landingInfoCard}>
                 <div style={styles.landingCardIcon}><Icon name="stethoscope" size={22} color={themeColors.purple} /></div>
-                <h4 style={styles.landingCardTitle}>Talk to Someone Who Gets It</h4>
+                <h4 style={styles.landingCardTitle}>Talk to Someone Who Understands It</h4>
                 <p style={styles.landingCardDesc}>Book a private session with a counsellor who understands the pressures girls in Uganda face every day.</p>
               </div>
             </section>
@@ -1805,6 +2211,21 @@ export default function App() {
 
         {/* MY PROFILE */}
         {currentView === 'profile' && renderProfileFeature()}
+
+        {/* AI HEALTH BOT */}
+        {currentView === 'aibot' && renderAIBotFeature()}
+
+        {/* LEARN SKILLS */}
+        {currentView === 'skills' && renderSkillsFeature()}
+
+        {/* TRACK HEALTH */}
+        {currentView === 'track' && renderTrackHealthFeature()}
+
+        {/* EMERGENCY HELP */}
+        {currentView === 'emergency' && renderEmergencyFeature()}
+
+        {/* EXPLORE TOPICS */}
+        {currentView === 'topics' && renderTopicsFeature()}
       </div>
     </>
   );
