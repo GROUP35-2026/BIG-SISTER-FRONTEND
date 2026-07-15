@@ -44,6 +44,8 @@ function Icon({ name, size = 18, color = 'currentColor', style }) {
     case 'target':       return <svg {...common}><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill={color}/></svg>;
     case 'sparkle':      return <svg {...common}><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.9 4.9l2.8 2.8"/><path d="M16.3 16.3l2.8 2.8"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.9 19.1l2.8-2.8"/><path d="M16.3 7.7l2.8-2.8"/></svg>;
     case 'home':         return <svg {...common}><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>;
+    case 'clock':        return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>;
+    case 'play':         return <svg {...common}><path d="M8 5.5v13l11-6.5-11-6.5z" fill={color} stroke="none"/></svg>;
     default:             return null;
   }
 }
@@ -660,6 +662,12 @@ export default function App() {
   ]);
   const [aiBotInput, setAiBotInput] = useState('');
 
+  // ── Learn Skills feature state ─────────────────────────────────────────────
+  const [skillsView, setSkillsView]         = useState('list');   // 'list' | 'detail'
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [courses, setCourses]               = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+
   // ── Track Health feature state ─────────────────────────────────────────────
   const [trackHealthTab, setTrackHealthTab] = useState('calendar');
   const [loggedSymptoms, setLoggedSymptoms] = useState([]);
@@ -729,16 +737,6 @@ export default function App() {
     { q: 'How to prevent infections?', a: "Change your pad or cloth every 4–6 hours, wash your hands before and after, wear cotton underwear, and keep the area clean and dry. Avoid scented soaps, as they can upset your body's natural balance." },
     { q: 'Why am I moody before period?', a: "Hormone levels shift in the days before your period, which can affect your mood — this is often called PMS. Feeling more sensitive, irritable, or teary is common. Gentle exercise, enough sleep, and talking to someone you trust can help you feel steadier." },
     { q: 'How to handle stress?', a: "Try deep breathing, talking to someone you trust, taking short breaks, and getting enough sleep. Writing down what's on your mind can also help. If stress feels like too much to carry alone, our counsellors are here for you." },
-  ];
-
-  // ── Learn Skills data ────────────────────────────────────────────────────────
-  const skillsCourses = [
-    { id: 'tailoring', name: 'Tailoring & Fashion', desc: 'Learn to sew clothes, alter garments, and start your own business', weeks: '6 weeks', progress: 0,  color: '#EC4899' },
-    { id: 'baking',    name: 'Baking & Pastry',     desc: 'Master breads, cakes, and snacks — earn money from home',        weeks: '4 weeks', progress: 25, color: '#F59E0B' },
-    { id: 'hair',      name: 'Hair Styling',        desc: 'Natural hair care, braiding, and salon business skills',         weeks: '5 weeks', progress: 60, color: '#9333EA' },
-    { id: 'digital',   name: 'Digital Skills',      desc: 'Phone literacy, social media business, and basic computing',     weeks: '3 weeks', progress: 0,  color: '#2563EB' },
-    { id: 'garden',    name: 'Kitchen Gardening',   desc: 'Grow your own vegetables, herbs, and learn about nutrition',     weeks: '4 weeks', progress: 0,  color: '#16A34A' },
-    { id: 'craft',     name: 'Craft & Beadwork',    desc: 'Make jewellery, bags, and crafts to sell locally and online',    weeks: '3 weeks', progress: 0,  color: '#06B6D4' },
   ];
 
   // ── Emergency Help data ──────────────────────────────────────────────────────
@@ -909,6 +907,51 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
+  // LEARN SKILLS HANDLERS
+  // ══════════════════════════════════════════════════════════════════════════
+  const fetchCourses = async (token) => {
+    setCoursesLoading(true);
+    try {
+      const headers = token ? authHeaders(token) : { 'Content-Type': 'application/json' };
+      const res  = await fetch(`${BACKEND_URL}/api/courses`, { headers });
+      const data = await res.json();
+      if (data.success) setCourses(data.courses);
+    } catch (err) { console.error('Fetch courses error:', err); }
+    finally { setCoursesLoading(false); }
+  };
+
+  const openSkillsHub = () => {
+    setSkillsView('list'); setSelectedCourse(null);
+    fetchCourses(authToken);
+  };
+
+  const handleOpenCourse = (course) => {
+    setSelectedCourse(course);
+    setSkillsView('detail');
+  };
+
+  const handleEnrollOrContinue = async (course) => {
+    if (!authToken) { showToast('Please sign in to start this course.', 'error'); return; }
+    const lessons = course.lessonsCount || 4;
+    const step = Math.max(1, Math.round(100 / lessons));
+    const wasEnrolled = (course.percentComplete || 0) > 0;
+    const nextPercent = Math.min(100, (course.percentComplete || 0) + step);
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/courses/${course.id}/progress`, {
+        method: 'PUT', headers: authHeaders(authToken), body: JSON.stringify({ percentComplete: nextPercent })
+      });
+      const data = await res.json();
+      if (!data.success) { showToast('Could not update your progress.', 'error'); return; }
+      const updatedCourse = { ...course, percentComplete: nextPercent, completed: nextPercent >= 100 };
+      setCourses(prev => prev.map(c => c.id === course.id ? updatedCourse : c));
+      setSelectedCourse(updatedCourse);
+      if (nextPercent >= 100) showToast(`Course completed! 🎉 You finished "${course.title}"`, 'success');
+      else if (wasEnrolled) showToast('Progress saved!', 'success');
+      else showToast(`Enrolled in "${course.title}"! Lesson 1 complete.`, 'success');
+    } catch (err) { console.error('Course progress error:', err); showToast('Could not connect to the server.', 'error'); }
+  };
+
+  // ══════════════════════════════════════════════════════════════════════════
   // PROFILE HANDLERS
   // ══════════════════════════════════════════════════════════════════════════
   const openProfile = () => {
@@ -973,6 +1016,7 @@ export default function App() {
               setAuthToken(d2.token); setCurrentUser(d2.user);
               await fetchBookedSessions(d2.token);
               await fetchSupportRequests(d2.token);
+              await fetchCourses(d2.token);
               // Route based on role
               if (d2.user.role === 'admin') {
                 setCurrentView('admin');
@@ -997,6 +1041,7 @@ export default function App() {
         setAuthEmail(''); setAuthPassword('');
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
+        await fetchCourses(data.token);
         showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
@@ -1019,6 +1064,7 @@ export default function App() {
         setAuthToken(data.token); setCurrentUser(data.user);
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
+        await fetchCourses(data.token);
         showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
@@ -1047,7 +1093,7 @@ export default function App() {
     { key: 'aibot',      icon: 'chat',        label: 'Ask AI Health Bot',   onClick: () => { setCurrentView('aibot'); } },
     { key: 'support',    icon: 'handshake',   label: 'Get Support',         onClick: () => { openSupportHub(); setCurrentView('support'); } },
     { key: 'counsellor', icon: 'stethoscope', label: 'Talk to Counsellor', onClick: () => { openCounsellorHub(); setCurrentView('counsellor'); } },
-    { key: 'skills',     icon: 'cap',         label: 'Learn Skills',        onClick: () => { setCurrentView('skills'); } },
+    { key: 'skills',     icon: 'cap',         label: 'Learn Skills',        onClick: () => { openSkillsHub(); setCurrentView('skills'); } },
     { key: 'emergency',  icon: 'alert',       label: 'Emergency Help',      onClick: () => { setCurrentView('emergency'); } },
     { key: 'track',      icon: 'chart',       label: 'Track Health',        onClick: () => { setCurrentView('track'); } },
     { key: 'topics',     icon: 'book',        label: 'Explore Topics',      onClick: () => { setCurrentView('topics'); } },
@@ -1686,10 +1732,73 @@ export default function App() {
   );
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LEARN SKILLS FEATURE RENDERER
+  // LEARN SKILLS FEATURE RENDERER (backend-connected: list view + detail view)
   // ══════════════════════════════════════════════════════════════════════════
   const renderSkillsFeature = () => {
-    const continueCourse = skillsCourses.find(c => c.progress > 0 && c.progress < 100);
+
+    // ── COURSE DETAIL VIEW ─────────────────────────────────────────────────
+    if (skillsView === 'detail' && selectedCourse) {
+      const c = selectedCourse;
+      const points = (c.learningPoints && c.learningPoints.length) ? c.learningPoints : ['Course content coming soon'];
+      const isEnrolled = (c.percentComplete || 0) > 0;
+      const isCompleted = c.completed || c.percentComplete >= 100;
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+            <button onClick={() => { setSkillsView('list'); setSelectedCourse(null); }} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.color, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={c.color} /></button>
+            <h2 style={{ fontSize: '19px', fontWeight: '800', color: c.color, margin: 0 }}>{c.title}</h2>
+          </div>
+
+          <div style={{ padding: '0 32px 32px 32px', boxSizing: 'border-box' }}>
+            <div style={{ borderRadius: '18px', backgroundColor: c.color, backgroundImage: 'radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 60%)', padding: '26px 24px', color: '#FFFFFF', marginBottom: '18px', boxSizing: 'border-box' }}>
+              <div style={{ fontSize: '34px', marginBottom: '10px', lineHeight: 1 }}>{c.icon}</div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '21px', fontWeight: '800' }}>{c.title}</h3>
+              <p style={{ margin: '0 0 14px 0', fontSize: '13px', opacity: 0.92, lineHeight: '1.5' }}>{c.description}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="clock" size={14} color="#FFFFFF" /> {c.durationWeeks} weeks</span>
+                <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="play" size={13} color="#FFFFFF" /> {c.lessonsCount} lessons</span>
+                <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="badge" size={14} color="#FFFFFF" /> Certificate Included</span>
+              </div>
+            </div>
+
+            {isEnrolled && (
+              <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '16px 20px', marginBottom: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#1A1A1A' }}>Your Progress</span>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: c.color }}>{c.percentComplete}%</span>
+                </div>
+                <div style={{ height: '8px', backgroundColor: '#F0F0F0', borderRadius: '5px', overflow: 'hidden' }}>
+                  <div style={{ width: `${c.percentComplete}%`, height: '100%', backgroundColor: c.color, borderRadius: '5px', transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            )}
+
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '20px', boxSizing: 'border-box' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>What you will learn:</p>
+              {points.map((pt, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: i < points.length - 1 ? '14px' : 0 }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: c.color, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', flexShrink: 0 }}>{i + 1}</div>
+                  <span style={{ fontSize: '13.5px', color: '#444444', fontWeight: '500' }}>{pt}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handleEnrollOrContinue(c)}
+              disabled={isCompleted}
+              style={{ width: '100%', backgroundColor: isCompleted ? '#16A34A' : c.color, color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '14px', fontSize: '14.5px', fontWeight: '800', cursor: isCompleted ? 'default' : 'pointer' }}
+            >
+              {isCompleted ? 'Course Completed ✓' : isEnrolled ? 'Continue' : 'Enroll for Free'}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── COURSE LIST VIEW ────────────────────────────────────────────────────
+    const continueCourse = courses.find(c => c.percentComplete > 0 && c.percentComplete < 100);
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
@@ -1701,40 +1810,54 @@ export default function App() {
         </div>
 
         <div style={{ padding: '0 32px', boxSizing: 'border-box' }}>
-          {continueCourse && (
-            <div style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)', borderRadius: '18px', padding: '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
+          {coursesLoading && (
+            <div style={{ textAlign: 'center', padding: '50px 20px', color: '#B45309', fontSize: '13px', fontWeight: '600' }}>Loading courses…</div>
+          )}
+
+          {!coursesLoading && continueCourse && (
+            <div style={{ background: `linear-gradient(135deg, ${continueCourse.color} 0%, ${continueCourse.color}CC 100%)`, borderRadius: '18px', padding: '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '14px' }}>
                 <div>
                   <p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9 }}>Continue learning</p>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800' }}>{continueCourse.name}</p>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', opacity: 0.9 }}>{continueCourse.progress}% complete</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800' }}>{continueCourse.title}</p>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', opacity: 0.9 }}>{continueCourse.percentComplete}% complete</p>
                 </div>
-                <button onClick={() => showToast(`Continuing ${continueCourse.name}…`, 'info')} style={{ backgroundColor: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '20px', padding: '9px 20px', color: '#FFFFFF', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Continue →</button>
+                <button onClick={() => handleOpenCourse(continueCourse)} style={{ backgroundColor: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '20px', padding: '9px 20px', color: '#FFFFFF', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Continue →</button>
               </div>
               <div style={{ height: '6px', backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${continueCourse.progress}%`, height: '100%', backgroundColor: '#FFFFFF', borderRadius: '4px' }} />
+                <div style={{ width: `${continueCourse.percentComplete}%`, height: '100%', backgroundColor: '#FFFFFF', borderRadius: '4px' }} />
               </div>
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
-            {skillsCourses.map(course => (
-              <div key={course.id} onClick={() => showToast(`Opening ${course.name}…`, 'info')} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '13px', backgroundColor: `${course.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: course.color, fontWeight: '800', fontSize: '16px', marginBottom: '12px' }}>{course.name.charAt(0)}</div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: '800', color: '#1A1A1A' }}>{course.name}</h4>
-                <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#888888', lineHeight: '1.4' }}>{course.desc}</p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#999999', display: 'flex', alignItems: 'center', gap: '5px' }}><Icon name="calendar" size={12} color="#999999" /> {course.weeks}</span>
-                  <Icon name="badge" size={15} color={course.color} />
-                </div>
-                {course.progress > 0 && (
-                  <div style={{ height: '5px', backgroundColor: '#F0F0F0', borderRadius: '4px', overflow: 'hidden', marginTop: '10px' }}>
-                    <div style={{ width: `${course.progress}%`, height: '100%', backgroundColor: course.color, borderRadius: '4px' }} />
+          {!coursesLoading && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
+              {courses.map(course => (
+                <div key={course.id} onClick={() => handleOpenCourse(course)} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '13px', backgroundColor: `${course.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '12px' }}>{course.icon}</div>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: '800', color: '#1A1A1A' }}>{course.title}</h4>
+                  <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#888888', lineHeight: '1.4' }}>{course.description}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#999999', display: 'flex', alignItems: 'center', gap: '5px' }}><Icon name="clock" size={12} color="#999999" /> {course.durationWeeks} weeks</span>
+                    <Icon name="badge" size={15} color={course.color} />
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  {course.percentComplete > 0 && (
+                    <div style={{ height: '5px', backgroundColor: '#F0F0F0', borderRadius: '4px', overflow: 'hidden', marginTop: '10px' }}>
+                      <div style={{ width: `${course.percentComplete}%`, height: '100%', backgroundColor: course.color, borderRadius: '4px' }} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!coursesLoading && courses.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '50px 20px', color: '#B45309' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="cap" size={30} color="#B45309" /></div>
+              <p style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>No courses available yet</p>
+              <p style={{ fontSize: '12.5px', marginTop: '6px' }}>Check back soon for new skills courses.</p>
+            </div>
+          )}
 
           <div style={{ backgroundColor: '#FEF3C7', borderRadius: '16px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
             <Icon name="badge" size={20} color="#D97706" />
@@ -2170,7 +2293,7 @@ export default function App() {
                 <div style={{ ...styles.featureCard, backgroundColor: '#CCFBF1' }} onClick={() => setCurrentView('aibot')}><span style={styles.featureIcon}><Icon name="chat" size={20} color="#0D9488" /></span><h3 style={{ ...styles.featureTitle, color: '#0D9488' }}>Ask AI Health Bot</h3><p style={{ ...styles.featureDesc, color: '#115E59' }}>Get instant, private answers to your health questions</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#DBEAFE' }} onClick={() => { openSupportHub(); setCurrentView('support'); }}><span style={styles.featureIcon}><Icon name="handshake" size={20} color="#2563EB" /></span><h3 style={{ ...styles.featureTitle, color: '#2563EB' }}>Get Support</h3><p style={{ ...styles.featureDesc, color: '#1E40AF' }}>Access sanitary pads, school fees, food, and more</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#F3E8FF' }} onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); }}><span style={styles.featureIcon}><Icon name="stethoscope" size={20} color="#9333EA" /></span><h3 style={{ ...styles.featureTitle, color: '#9333EA' }}>Talk to Counsellor</h3><p style={{ ...styles.featureDesc, color: '#6B21A8' }}>Book a session or chat live with a professional</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FEF3C7' }} onClick={() => setCurrentView('skills')}><span style={styles.featureIcon}><Icon name="cap" size={20} color="#D97706" /></span><h3 style={{ ...styles.featureTitle, color: '#D97706' }}>Learn Skills</h3><p style={{ ...styles.featureDesc, color: '#92400E' }}>Watch videos, earn certificates, find opportunities</p></div>
+                <div style={{ ...styles.featureCard, backgroundColor: '#FEF3C7' }} onClick={() => { openSkillsHub(); setCurrentView('skills'); }}><span style={styles.featureIcon}><Icon name="cap" size={20} color="#D97706" /></span><h3 style={{ ...styles.featureTitle, color: '#D97706' }}>Learn Skills</h3><p style={{ ...styles.featureDesc, color: '#92400E' }}>Watch videos, earn certificates, find opportunities</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#FEE2E2' }} onClick={() => setCurrentView('emergency')}><span style={styles.featureIcon}><Icon name="alert" size={20} color="#DC2626" /></span><h3 style={{ ...styles.featureTitle, color: '#DC2626' }}>Emergency Help</h3><p style={{ ...styles.featureDesc, color: '#991B1B' }}>Find nearby clinics and emergency contacts</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#FCE7F3' }} onClick={() => setCurrentView('track')}><span style={styles.featureIcon}><Icon name="chart" size={20} color="#DB2777" /></span><h3 style={{ ...styles.featureTitle, color: '#DB2777' }}>Track Health</h3><p style={{ ...styles.featureDesc, color: '#9D174D' }}>Monitor your cycle, symptoms, and health trends</p></div>
                 <div style={{ ...styles.featureCard, backgroundColor: '#E0F2FE' }} onClick={() => setCurrentView('topics')}><span style={styles.featureIcon}><Icon name="book" size={20} color="#0284C7" /></span><h3 style={{ ...styles.featureTitle, color: '#0284C7' }}>Explore Topics</h3><p style={{ ...styles.featureDesc, color: '#075985' }}>Learn about your body, health, and safe decisions</p></div>
@@ -2184,7 +2307,7 @@ export default function App() {
                     { icon: 'heart', label: 'Symptom Checker', bg: '#FDE4EA', color: '#E11D48', onClick: () => setCurrentView('track') },
                     { icon: 'pin', label: 'Nearby Services', bg: '#DBEAFE', color: '#2563EB', onClick: () => setCurrentView('emergency') },
                     { icon: 'users', label: 'Community', bg: '#F3E8FF', color: '#9333EA', onClick: () => showToast('Community coming soon!', 'info') },
-                    { icon: 'badge', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => setCurrentView('skills') },
+                    { icon: 'badge', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => { openSkillsHub(); setCurrentView('skills'); } },
                   ].map(item => (
                     <div
                       key={item.label}
