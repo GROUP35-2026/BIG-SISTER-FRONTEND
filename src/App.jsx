@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import bgImage from './IMAGE.PNG';
+import bgImage from './IMAGE.png';
 import signBgImage from './SIGN.jpg';
 
 // ── Icon set (replaces emoji glyphs with clean line icons) ──────────────────
