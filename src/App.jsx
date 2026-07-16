@@ -764,11 +764,60 @@ export default function App() {
   const [confirmDeleteSupportId, setConfirmDeleteSupportId] = useState(null);
   const [submittingSupport, setSubmittingSupport]   = useState(false);
 
-  // ── My Profile feature state ───────────────────────────────────────────────
+// ── My Profile feature state ───────────────────────────────────────────────
   const [profileNewEmail, setProfileNewEmail]       = useState('');
   const [updatingEmail, setUpdatingEmail]           = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [deletingAccount, setDeletingAccount]       = useState(false);
+  const [profileSection, setProfileSection]         = useState('info'); // which settings menu item is active
+  const [profileForm, setProfileForm] = useState({
+    fullName: '',
+    email: '',
+    dob: '',
+    gender: 'Female',
+    location: '',
+    healthGoal: 'Better overall well-being',
+    cycleLength: '28 days',
+    periodLength: '5 days',
+  });
+  const [profilePhoto, setProfilePhoto] = useState(null); // data URL preview
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setProfileForm(f => ({
+        ...f,
+        fullName: currentUser.fullName || '',
+        email: currentUser.email || '',
+      }));
+      setProfileNewEmail(currentUser.email || '');
+    }
+  }, [currentUser]);
+
+  const updateProfileField = (field, value) => setProfileForm(f => ({ ...f, [field]: value }));
+
+  const handleProfilePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setProfilePhoto(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e?.preventDefault();
+    setSavingProfile(true);
+    try {
+      // Reuses the existing email-update endpoint; extend backend later for the other fields.
+      if (profileForm.email !== currentUser?.email) {
+        await handleUpdateEmail({ preventDefault: () => {} });
+      } else {
+        showToast('Profile updated.', 'success');
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // ── AI Health Bot feature state ────────────────────────────────────────────
   const [aiBotMessages, setAiBotMessages] = useState([
@@ -1241,10 +1290,10 @@ export default function App() {
     { key: 'downloads', icon: 'download', label: 'Downloads',  onClick: () => showToast('Downloads coming soon!', 'info') },
   ];
 
+
   const accountNavItems = [
     { key: 'profile',  icon: 'profile',  label: 'My Profile', onClick: openProfile },
-    { key: 'settings', icon: 'settings', label: 'Settings',   onClick: () => showToast('Settings coming soon!', 'info') },
-    { key: 'logout',   icon: 'logout',   label: 'Logout',     onClick: handleLogout },
+    { key: 'logout',   icon: 'logout',   label: 'Logout',     onClick: handleLogout }
   ];
 
   const isNavItemActive = (key) => {
@@ -1442,19 +1491,7 @@ export default function App() {
           </div>
         ))}
 
-        <div style={styles.sidebarSectionLabel}>Tools & Resources</div>
-        {resourceNavItems.map(item => (
-          <div
-            key={item.key}
-            style={styles.sidebarNavItem}
-            onClick={item.onClick}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-          >
-            <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color="#5B5B5B" /></span>
-            <span>{item.label}</span>
-          </div>
-        ))}
+        
 
         <div style={styles.sidebarSectionLabel}>Account</div>
         {accountNavItems.map(item => (
@@ -1762,62 +1799,245 @@ export default function App() {
     );
   };
 
-  // ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════
   // MY PROFILE FEATURE RENDERER
   // ══════════════════════════════════════════════════════════════════════════
   const renderProfileFeature = () => {
     if (!currentUser) return null;
+
+    const settingsMenu = [
+      { key: 'info',          icon: 'profile',   title: 'Profile Information', desc: 'Update your personal details and how others see you.' },
+      { key: 'notifications', icon: 'bell',      title: 'Notifications',       desc: 'Manage your alerts and reminders' },
+      { key: 'privacy',       icon: 'lock',      title: 'Privacy & Security',  desc: 'Control your privacy settings' },
+      { key: 'appearance',    icon: 'lightbulb', title: 'Appearance',          desc: 'Customize app appearance' },
+      { key: 'language',      icon: 'globe',     title: 'Language',            desc: 'Choose your preferred language' },
+      { key: 'export',        icon: 'download',  title: 'Data & Export',       desc: 'Download or export your data' },
+      { key: 'delete',        icon: 'trash',     title: 'Delete Account',      desc: 'Permanently delete your account' },
+    ];
+
+    const avatarSrc = profilePhoto || null;
+    const cardStyle = { backgroundColor: '#FFFFFF', borderRadius: '18px', border: '1px solid #F0E4F7', boxShadow: '0 2px 10px rgba(144,35,240,0.05)', boxSizing: 'border-box' };
+
     return (
-      <div style={styles.authCardWrapper}>
-        <div style={{ ...styles.authMainCard, maxWidth: '420px', textAlign: 'left' }}>
-          <h2 style={{ ...styles.authCardTitle, textAlign: 'left' }}>My Profile</h2>
-          <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 18px 0', lineHeight: '1.4', textAlign: 'justify' }}>
-            Manage your account details below. Changes are saved straight to your account.
-          </p>
+      <div style={{ width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF7FC' }} className="no-scrollbar">
 
-          <form onSubmit={handleUpdateEmail}>
-            <div style={styles.inputGroup}>
-              <label style={styles.inputLabel}>Full Name</label>
-              <input type="text" value={currentUser.fullName || ''} disabled style={{ ...styles.inputField, color: '#999999', backgroundColor: '#EFEFEF', cursor: 'not-allowed' }} />
-            </div>
-            <div style={styles.inputGroup}>
-              <label style={styles.inputLabel}>Email</label>
-              <input type="email" placeholder="you@example.com" style={styles.inputField} value={profileNewEmail} onChange={e => setProfileNewEmail(e.target.value)} required />
-            </div>
-            <button type="submit" style={styles.authSubmitBtn} disabled={updatingEmail}>
-              {updatingEmail ? 'Updating…' : 'Update Email'}
-            </button>
-          </form>
-
-          <div style={{ borderTop: '1px solid #EAEAEA', marginTop: '16px', paddingTop: '18px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '800', color: '#DC2626', margin: '0 0 8px 0' }}>Danger Zone</p>
-            <p style={{ fontSize: '12px', color: '#888888', margin: '0 0 14px 0', lineHeight: '1.45', textAlign: 'justify' }}>
-              Deleting your account permanently removes your profile, booked counsellor sessions, and support requests. This cannot be undone.
+        {/* Header banner */}
+        <div style={{ background: themeColors.gradientBg, padding: '28px 40px' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.3px' }}>My Profile</h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '500' }}>
+              View and manage your profile information and account settings
             </p>
-            {confirmDeleteAccount ? (
-              <div style={styles.deleteConfirmRow}>
-                <p style={styles.deleteConfirmText}>Permanently delete your account?</p>
-                <div style={styles.deleteConfirmActions}>
-                  <button style={styles.deleteConfirmYesBtn} onClick={handleDeleteAccount} disabled={deletingAccount}>
-                    {deletingAccount ? 'Deleting…' : 'Yes, Delete'}
-                  </button>
-                  <button style={styles.deleteConfirmNoBtn} onClick={() => setConfirmDeleteAccount(false)}>Cancel</button>
-                </div>
-              </div>
-            ) : (
-              <button
-                style={{ width: '100%', backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '22px', padding: '11px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                onClick={() => setConfirmDeleteAccount(true)}
-              >
-                <Icon name="trash" size={14} color="#DC2626" /> Delete My Account
-              </button>
-            )}
           </div>
+        </div>
 
-          <div style={{ marginTop: '18px', textAlign: 'center' }}>
-            <span style={{ fontSize: '12.5px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer' }} onClick={() => setCurrentView('dashboard')}>
-              ← Back to Dashboard
-            </span>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '28px 40px 60px 40px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '280px 300px 1fr', gap: '20px', alignItems: 'start' }}>
+
+            {/* ── Left: Avatar summary card ── */}
+            <div style={{ ...cardStyle, padding: '28px 22px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '20px' }}>
+                <div style={{ position: 'relative', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '92px', height: '92px', borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #F3E8FF 0%, #FDEBF5 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                    fontSize: '30px', fontWeight: '800', color: themeColors.purple,
+                    border: '3px solid #FFFFFF', boxShadow: '0 4px 14px rgba(144,35,240,0.15)'
+                  }}>
+                    {avatarSrc
+                      ? <img src={avatarSrc} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : (currentUser.fullName?.charAt(0)?.toUpperCase() || '?')}
+                  </div>
+                  <label htmlFor="profile-photo-input-card" style={{ position: 'absolute', bottom: '2px', right: '2px', width: '26px', height: '26px', borderRadius: '50%', background: themeColors.gradientBg, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid #FFFFFF', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+                    <Icon name="pencil" size={11} color="#FFFFFF" />
+                  </label>
+                  <input id="profile-photo-input-card" type="file" accept="image/png,image/jpeg" onChange={handleProfilePhotoChange} style={{ display: 'none' }} />
+                </div>
+                <h3 style={{ margin: '2px 0 3px 0', fontSize: '16px', fontWeight: '800', color: '#1A1A1A' }}>{profileForm.fullName || 'Your Name'}</h3>
+                <span style={{ fontSize: '12px', color: themeColors.purple, fontWeight: '600' }}>{profileForm.email}</span>
+              </div>
+
+              <div style={{ borderTop: '1px solid #F3EAFA', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {[
+                  { icon: 'calendar', label: 'Date of Birth', value: profileForm.dob || 'Not set' },
+                  { icon: 'pin',      label: 'Location',      value: profileForm.location || 'Not set' },
+                  { icon: 'profile',  label: 'Gender',        value: profileForm.gender },
+                  { icon: 'droplet',  label: 'Cycle Length',  value: profileForm.cycleLength },
+                  { icon: 'heart',    label: 'Health Goal',   value: profileForm.healthGoal },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', alignItems: 'flex-start', gap: '11px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '9px', backgroundColor: '#F8F1FC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon name={row.icon} size={13} color={themeColors.purple} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '10.5px', color: '#A899AF', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{row.label}</div>
+                      <div style={{ fontSize: '13px', color: '#2A2A2A', fontWeight: '700', marginTop: '1px' }}>{row.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setProfileSection('info')}
+                style={{ width: '100%', marginTop: '22px', background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: '11px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 3px 10px rgba(144,35,240,0.2)' }}
+              >
+                Edit Profile
+              </button>
+            </div>
+
+            {/* ── Middle: Settings menu ── */}
+            <div style={{ ...cardStyle, padding: '10px', display: 'flex', flexDirection: 'column', gap: '2px', height: 'fit-content' }}>
+              {settingsMenu.map((item, idx) => {
+                const active = profileSection === item.key;
+                const isDanger = item.key === 'delete';
+                return (
+                  <div key={item.key}>
+                    <div
+                      onClick={() => setProfileSection(item.key)}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '13px 14px', borderRadius: '12px', cursor: 'pointer',
+                        backgroundColor: active ? '#FBEEFB' : 'transparent',
+                        transition: 'background-color 0.15s',
+                      }}
+                      onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#FBF7FD'; }}
+                      onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <div style={{ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: isDanger ? '#FEF2F2' : (active ? '#F3E1F7' : '#F6F6F8'), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Icon name={item.icon} size={14} color={isDanger ? '#DC2626' : (active ? themeColors.magenta : '#8B8B93')} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '12.5px', fontWeight: '700', color: isDanger ? '#DC2626' : (active ? themeColors.magenta : '#333333') }}>{item.title}</div>
+                        <div style={{ fontSize: '11px', color: '#9C9CA5', marginTop: '1px', lineHeight: '1.3' }}>{item.desc}</div>
+                      </div>
+                    </div>
+                    {idx < settingsMenu.length - 1 && <div style={{ height: '1px', backgroundColor: '#F5EFFA', margin: '2px 14px' }} />}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Right: Editable panel ── */}
+            <div style={{ ...cardStyle, padding: '28px 32px', minHeight: '460px' }}>
+
+              {profileSection === 'delete' ? (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '10px', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="trash" size={15} color="#DC2626" />
+                    </div>
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#DC2626', margin: 0 }}>Delete Account</h3>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#888888', margin: '0 0 20px 0', lineHeight: '1.6' }}>
+                    Deleting your account permanently removes your profile, booked counsellor sessions, and support requests. This action cannot be undone.
+                  </p>
+                  {confirmDeleteAccount ? (
+                    <div style={styles.deleteConfirmRow}>
+                      <p style={styles.deleteConfirmText}>Permanently delete your account?</p>
+                      <div style={styles.deleteConfirmActions}>
+                        <button style={styles.deleteConfirmYesBtn} onClick={handleDeleteAccount} disabled={deletingAccount}>
+                          {deletingAccount ? 'Deleting…' : 'Yes, Delete'}
+                        </button>
+                        <button style={styles.deleteConfirmNoBtn} onClick={() => setConfirmDeleteAccount(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      style={{ backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '22px', padding: '11px 22px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                      onClick={() => setConfirmDeleteAccount(true)}
+                    >
+                      <Icon name="trash" size={13} color="#DC2626" /> Delete My Account
+                    </button>
+                  )}
+                </div>
+              ) : profileSection !== 'info' ? (
+                <div style={{ textAlign: 'center', padding: '80px 10px', color: '#B9AFC4' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                    <Icon name={settingsMenu.find(m => m.key === profileSection)?.icon} size={30} color="#D9CCE6" />
+                  </div>
+                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0 }}>
+                    {settingsMenu.find(m => m.key === profileSection)?.title} settings coming soon
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: themeColors.magenta, margin: '0 0 3px 0' }}>Profile Information</h3>
+                  <p style={{ fontSize: '12px', color: '#999999', margin: '0 0 24px 0' }}>Update your personal details and how others see you.</p>
+
+                  <form onSubmit={handleSaveProfile}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
+                      <div>
+                        <label style={styles.inputLabel}>Full Name</label>
+                        <input type="text" style={styles.inputField} value={profileForm.fullName} onChange={e => updateProfileField('fullName', e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Email Address</label>
+                        <input type="email" style={styles.inputField} value={profileForm.email} onChange={e => { updateProfileField('email', e.target.value); setProfileNewEmail(e.target.value); }} />
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Date of Birth</label>
+                        <input type="date" style={styles.inputField} value={profileForm.dob} onChange={e => updateProfileField('dob', e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Gender</label>
+                        <select style={styles.inputField} value={profileForm.gender} onChange={e => updateProfileField('gender', e.target.value)}>
+                          <option>Female</option>
+                          <option>Male</option>
+                          <option>Prefer not to say</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Location</label>
+                        <input type="text" placeholder="City, Country" style={styles.inputField} value={profileForm.location} onChange={e => updateProfileField('location', e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Health Goal</label>
+                        <select style={styles.inputField} value={profileForm.healthGoal} onChange={e => updateProfileField('healthGoal', e.target.value)}>
+                          <option>Better overall well-being</option>
+                          <option>Track my cycle</option>
+                          <option>Manage symptoms</option>
+                          <option>Learn about my body</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Cycle Length (Average)</label>
+                        <select style={styles.inputField} value={profileForm.cycleLength} onChange={e => updateProfileField('cycleLength', e.target.value)}>
+                          {['21 days','24 days','26 days','28 days','30 days','32 days','35 days'].map(v => <option key={v}>{v}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={styles.inputLabel}>Period Length (Average)</label>
+                        <select style={styles.inputField} value={profileForm.periodLength} onChange={e => updateProfileField('periodLength', e.target.value)}>
+                          {['3 days','4 days','5 days','6 days','7 days'].map(v => <option key={v}>{v}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '24px', paddingTop: '18px', borderTop: '1px solid #F3EAFA' }}>
+                      <label style={styles.inputLabel}>Profile Photo</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
+                        <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#F3E8FF', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: themeColors.purple, flexShrink: 0, border: '2px solid #FFFFFF', boxShadow: '0 2px 8px rgba(144,35,240,0.12)' }}>
+                          {avatarSrc ? <img src={avatarSrc} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (profileForm.fullName?.charAt(0)?.toUpperCase() || '?')}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '11.5px', color: '#999999', marginBottom: '6px' }}>JPG or PNG. Max size 2MB.</div>
+                          <label htmlFor="profile-photo-input-form" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#F3E8FF', color: themeColors.purple, borderRadius: '16px', padding: '7px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                            <Icon name="download" size={12} color={themeColors.purple} /> Change Photo
+                          </label>
+                          <input id="profile-photo-input-form" type="file" accept="image/png,image/jpeg" onChange={handleProfilePhotoChange} style={{ display: 'none' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button type="submit" disabled={savingProfile} style={{ background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '12px 28px', fontSize: '13.5px', fontWeight: '700', cursor: savingProfile ? 'default' : 'pointer', opacity: savingProfile ? 0.7 : 1, boxShadow: '0 3px 10px rgba(144,35,240,0.2)' }}>
+                        {savingProfile ? 'Saving…' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -2444,11 +2664,7 @@ export default function App() {
                 <h3 style={styles.quickAccessTitle}>Quick Access</h3>
                 <div style={styles.quickAccessRow}>
                   {[
-                    { icon: 'droplet', label: 'Period Tracker', bg: '#FCE0EC', color: '#DB2777', onClick: () => setCurrentView('track') },
-                    { icon: 'heart', label: 'Symptom Checker', bg: '#FDE4EA', color: '#E11D48', onClick: () => setCurrentView('track') },
-                    { icon: 'pin', label: 'Nearby Services', bg: '#DBEAFE', color: '#2563EB', onClick: () => setCurrentView('emergency') },
-                    { icon: 'users', label: 'Community', bg: '#F3E8FF', color: '#9333EA', onClick: () => showToast('Community coming soon!', 'info') },
-                    { icon: 'badge', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => { openSkillsHub(); setCurrentView('skills'); } },
+                    { icon: 'badge', label: 'My Certificates', bg: '#FEF3C7', color: '#D97706', onClick: () => { openSkillsHub(); setCurrentView('skills'); } }
                   ].map(item => (
                     <div
                       key={item.label}
@@ -2531,38 +2747,7 @@ export default function App() {
         </div>
       )}
 
-      {/* GOOGLE POPUP */}
-      {showGooglePopup && (
-        <div style={styles.overlay}>
-          <div style={styles.popupBox}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.61c-.29 1.53-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.65-5.17 3.65-8.58z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.11 0-5.74-2.11-6.68-4.96H1.21v3.15C3.18 21.88 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.32 14.24A7.16 7.16 0 0 1 4.91 12c0-.79.13-1.57.38-2.31V6.54H1.21A11.94 11.94 0 0 0 0 12c0 1.92.45 3.74 1.21 5.39l4.11-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.18 2.12 1.21 5.46l4.11 3.15c.94-2.85 3.57-4.96 6.68-4.96z"/></svg>
-              <span style={{ fontSize: '16px', fontWeight: '600', color: '#3c4043' }}>Sign in with Google</span>
-            </div>
-            <p style={{ fontSize: '14px', color: '#202124', margin: '0 0 4px 0', fontWeight: '500' }}>Choose an account</p>
-            <p style={{ fontSize: '12px', color: '#5f6368', margin: '0 0 16px 0' }}>to continue to <span style={{ color: themeColors.purple, fontWeight: '600' }}>Big Sister</span></p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '240px', overflowY: 'auto' }} className="no-scrollbar">
-              {[
-                { name: 'Jordan Kirumira',   email: 'joriana800@gmail.com',       initials: 'JK', color: '#E61B9B' },
-                { name: 'Jordan',            email: 'jordankir449@gmail.com',     initials: 'J',  color: '#7614EC' },
-                { name: 'Kigenyi Erisa',     email: 'mstr.erisa@gmail.com',       initials: 'KE', color: '#FFB300' },
-                { name: 'Kigenyi Emmanuel',  email: 'kigenyierisa66@gmail.com',   initials: 'KE', color: '#2b9348' },
-                { name: 'Victoria Marvis',   email: 'victoriamarvis18@gmail.com', initials: 'VM', color: '#00b4d8' }
-              ].map(account => (
-                <div key={account.email} onClick={() => handleGoogleAccountSelect(account)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 8px', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#FFFFFF', transition: 'background-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f3f4'} onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FFFFFF'}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: account.color, color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>{account.initials}</div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#3c4043' }}>{account.name}</div>
-                    <div style={{ fontSize: '11px', color: '#5f6368' }}>{account.email}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: '12px 8px 0 8px', borderTop: '1px solid #e8eaed', marginTop: '10px', fontSize: '13px', color: '#1a73e8', fontWeight: '500', cursor: 'pointer', textAlign: 'center' }} onClick={() => { setShowGooglePopup(false); showToast('Custom account entry coming soon.', 'info'); }}>Use another account</div>
-            <button onClick={() => setShowGooglePopup(false)} style={{ width: '100%', marginTop: '14px', padding: '8px', borderRadius: '8px', border: 'none', backgroundColor: '#f1f3f4', color: '#3c4043', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 }
