@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import bgImage from './IMAGE.png';
+import bgImage from './IMAGE.PNG';
 import signBgImage from './SIGN.jpg';
+
+// ── Default dashboard cards (used until the backend config loads) ───────────
+const DEFAULT_DASHBOARD_CARDS = [
+  { id: 'aibot',      icon: 'chat',        title: 'Ask AI Health Bot', description: 'Get instant, private answers to your health questions', bgColor: '#CCFBF1', textColor: '#0D9488', descColor: '#115E59', targetView: 'aibot',      order: 0 },
+  { id: 'support',    icon: 'handshake',   title: 'Get Support',       description: 'Access sanitary pads, school fees, food, and more',       bgColor: '#DBEAFE', textColor: '#2563EB', descColor: '#1E40AF', targetView: 'support',    order: 1 },
+  { id: 'counsellor', icon: 'stethoscope', title: 'Talk to Counsellor',description: 'Book a session or chat live with a professional',        bgColor: '#F3E8FF', textColor: '#9333EA', descColor: '#6B21A8', targetView: 'counsellor', order: 2 },
+  { id: 'skills',     icon: 'cap',         title: 'Learn Skills',      description: 'Watch videos, earn certificates, find opportunities',     bgColor: '#FEF3C7', textColor: '#D97706', descColor: '#92400E', targetView: 'skills',     order: 3 },
+  { id: 'emergency',  icon: 'alert',       title: 'Emergency Help',    description: 'Find nearby clinics and emergency contacts',              bgColor: '#FEE2E2', textColor: '#DC2626', descColor: '#991B1B', targetView: 'emergency',  order: 4 },
+  { id: 'track',      icon: 'chart',       title: 'Track Health',      description: 'Monitor your cycle, symptoms, and health trends',         bgColor: '#FCE7F3', textColor: '#DB2777', descColor: '#9D174D', targetView: 'track',      order: 5 },
+  { id: 'topics',     icon: 'book',        title: 'Explore Topics',    description: 'Learn about your body, health, and safe decisions',       bgColor: '#E0F2FE', textColor: '#0284C7', descColor: '#075985', targetView: 'topics',     order: 6 },
+];
+
+const DASHBOARD_ICON_OPTIONS = ['chat','handshake','stethoscope','cap','alert','chart','book','droplet','heart','pin','users','badge','lightbulb','shield','lock','sparkle','home','clock','play','crown','globe','mail'];
+const DASHBOARD_TARGET_VIEWS = ['dashboard','aibot','support','counsellor','skills','emergency','track','topics'];
 
 // ── Icon set (replaces emoji glyphs with clean line icons) ──────────────────
 function Icon({ name, size = 18, color = 'currentColor', style }) {
@@ -177,7 +191,11 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
   const [showContentModal, setShowContentModal] = useState(false);
   const [editingContent, setEditingContent] = useState(null);
   const [contentForm, setContentForm] = useState({ title: '', category: 'Health Tips', status: 'Draft', body: '' });
-  const [appearanceForm, setAppearanceForm] = useState({ primary: '#9333ea', accent: '#ec4899', background: '#f8f0ff', appName: 'Big Sister', tagline: 'FOR EVERY GIRL', welcomeBanner: 'Welcome back' });
+  const [appearanceForm, setAppearanceForm] = useState({
+    primary: '#9333ea', accent: '#ec4899', background: '#f8f0ff',
+    appName: 'Big Sister', tagline: 'FOR EVERY GIRL', welcomeBanner: 'Welcome back',
+    dashboardCards: DEFAULT_DASHBOARD_CARDS
+  });
 
   const authHeaders = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
@@ -202,7 +220,15 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
 
       const resApp = await fetch(`${backendUrl}/api/admin/appearance`, { headers: authHeaders });
       const aData = await resApp.json(); 
-      if (aData.success) setAppearanceForm({ ...appearanceForm, ...aData.settings });
+      if (aData.success) {
+        setAppearanceForm(prev => ({
+          ...prev,
+          ...aData.settings,
+          dashboardCards: (aData.settings.dashboardCards && aData.settings.dashboardCards.length > 0)
+            ? aData.settings.dashboardCards
+            : DEFAULT_DASHBOARD_CARDS
+        }));
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -248,6 +274,43 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
       await fetch(`${backendUrl}/api/admin/maintenance/${taskName}`, { method: 'POST', headers: authHeaders });
       setConfirmingTask(null); showToast(`${taskName} executed successfully!`, 'success'); fetchData();
     } catch (e) { showToast(`Error running ${taskName}`, 'error'); }
+  };
+
+  // ── Dashboard Card Editor Handlers ──────────────────────────────────────────
+  const addDashboardCard = () => {
+    setAppearanceForm(f => ({
+      ...f,
+      dashboardCards: [...f.dashboardCards, {
+        id: `card-${Date.now()}`, icon: 'sparkle', title: 'New Feature',
+        description: 'Description here', bgColor: '#F3E8FF', textColor: '#9333EA',
+        descColor: '#6B21A8', targetView: 'dashboard', order: f.dashboardCards.length
+      }]
+    }));
+  };
+
+  const updateDashboardCard = (id, field, value) => {
+    setAppearanceForm(f => ({
+      ...f,
+      dashboardCards: f.dashboardCards.map(c => c.id === id ? { ...c, [field]: value } : c)
+    }));
+  };
+
+  const removeDashboardCard = (id) => {
+    setAppearanceForm(f => ({
+      ...f,
+      dashboardCards: f.dashboardCards.filter(c => c.id !== id).map((c, i) => ({ ...c, order: i }))
+    }));
+  };
+
+  const moveDashboardCard = (id, dir) => {
+    setAppearanceForm(f => {
+      const cards = [...f.dashboardCards];
+      const idx = cards.findIndex(c => c.id === id);
+      const swapWith = dir === 'up' ? idx - 1 : idx + 1;
+      if (swapWith < 0 || swapWith >= cards.length) return f;
+      [cards[idx], cards[swapWith]] = [cards[swapWith], cards[idx]];
+      return { ...f, dashboardCards: cards.map((c, i) => ({ ...c, order: i })) };
+    });
   };
 
   // ── Render Admin Views ─────────────────────────────────────────────────────
@@ -428,14 +491,62 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                 <div style={{ marginBottom: '12px' }}><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Tagline</label><input type="text" value={appearanceForm.tagline} onChange={e => setAppearanceForm({...appearanceForm, tagline: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
                 <div><label style={{ color: '#888', fontSize: '12px', display: 'block' }}>Welcome Banner</label><input type="text" value={appearanceForm.welcomeBanner} onChange={e => setAppearanceForm({...appearanceForm, welcomeBanner: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} /></div>
               </div>
+
+              {/* ── Dashboard Cards Editor ── */}
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <h4 style={{ color: '#fff', margin: 0 }}>Dashboard Cards</h4>
+                  <button onClick={addDashboardCard} style={{ padding: '6px 16px', borderRadius: '16px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>+ Add Card</button>
+                </div>
+                {appearanceForm.dashboardCards.length === 0 && (
+                  <p style={{ color: '#888', fontSize: '12.5px', textAlign: 'center', padding: '20px 0' }}>No cards yet. Click "Add Card" to create one.</p>
+                )}
+                {appearanceForm.dashboardCards.map((card, i) => (
+                  <div key={card.id} style={{ background: '#1e162b', borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <input value={card.title} onChange={e => updateDashboardCard(card.id, 'title', e.target.value)} placeholder="Title" style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px' }} />
+                      <select value={card.icon} onChange={e => updateDashboardCard(card.id, 'icon', e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px' }}>
+                        {DASHBOARD_ICON_OPTIONS.map(ic => <option key={ic} value={ic}>{ic}</option>)}
+                      </select>
+                    </div>
+                    <input value={card.description} onChange={e => updateDashboardCard(card.id, 'description', e.target.value)} placeholder="Description" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px', marginBottom: '8px', boxSizing: 'border-box' }} />
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label style={{ color: '#888', fontSize: '11px' }}>BG</label>
+                      <input type="color" value={card.bgColor} onChange={e => updateDashboardCard(card.id, 'bgColor', e.target.value)} style={{ width: '28px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} />
+                      <label style={{ color: '#888', fontSize: '11px' }}>Text</label>
+                      <input type="color" value={card.textColor} onChange={e => updateDashboardCard(card.id, 'textColor', e.target.value)} style={{ width: '28px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} />
+                      <label style={{ color: '#888', fontSize: '11px' }}>Desc</label>
+                      <input type="color" value={card.descColor} onChange={e => updateDashboardCard(card.id, 'descColor', e.target.value)} style={{ width: '28px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} />
+                      <select value={card.targetView} onChange={e => updateDashboardCard(card.id, 'targetView', e.target.value)} style={{ padding: '6px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '11px' }}>
+                        {DASHBOARD_TARGET_VIEWS.map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+                        <button onClick={() => moveDashboardCard(card.id, 'up')} disabled={i === 0} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #444', background: 'transparent', color: '#ccc', cursor: i === 0 ? 'not-allowed' : 'pointer', opacity: i === 0 ? 0.4 : 1 }}>↑</button>
+                        <button onClick={() => moveDashboardCard(card.id, 'down')} disabled={i === appearanceForm.dashboardCards.length - 1} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #444', background: 'transparent', color: '#ccc', cursor: i === appearanceForm.dashboardCards.length - 1 ? 'not-allowed' : 'pointer', opacity: i === appearanceForm.dashboardCards.length - 1 ? 0.4 : 1 }}>↓</button>
+                        <button onClick={() => removeDashboardCard(card.id)} style={{ padding: '4px 8px', borderRadius: '6px', border: 'none', background: '#7f1d1d', color: '#fff', cursor: 'pointer' }}>✕</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <button onClick={handleSaveAppearance} style={{ width: '100%', padding: '12px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #9333ea, #e91e63)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>Save & Publish Changes</button>
             </div>
-            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <h4 style={{ color: '#fff', margin: '0 0 20px 0' }}>Live Preview</h4>
-              <div style={{ width: '100%', height: '80%', background: '#fff', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ flex: 1, background: '#2c223c', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <h4 style={{ color: '#fff', margin: '0 0 20px 0', alignSelf: 'flex-start' }}>Live Preview</h4>
+              <div style={{ width: '100%', background: '#fff', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '16px', boxSizing: 'border-box' }}>
                 <div style={{ color: appearanceForm.primary, fontWeight: 'bold', fontSize: '24px', marginBottom: '10px' }}>{appearanceForm.appName}</div>
                 <div style={{ color: '#888', fontSize: '12px' }}>{appearanceForm.tagline}</div>
                 <div style={{ marginTop: '20px', padding: '10px 20px', background: `linear-gradient(135deg, ${appearanceForm.primary}, ${appearanceForm.accent})`, color: '#fff', borderRadius: '20px' }}>{appearanceForm.welcomeBanner}</div>
+              </div>
+              <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', boxSizing: 'border-box' }}>
+                {appearanceForm.dashboardCards.map(card => (
+                  <div key={card.id} style={{ backgroundColor: card.bgColor, borderRadius: '10px', padding: '10px', boxSizing: 'border-box' }}>
+                    <Icon name={card.icon} size={14} color={card.textColor} />
+                    <div style={{ fontSize: '10.5px', fontWeight: '700', color: card.textColor, marginTop: '4px' }}>{card.title}</div>
+                    <div style={{ fontSize: '9px', color: card.descColor, marginTop: '2px', lineHeight: '1.3' }}>{card.description}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -630,6 +741,9 @@ export default function App() {
 
   const BACKEND_URL = 'http://localhost:5000';
 
+  // ── Admin-editable dashboard cards (fetched from backend) ────────────────
+  const [dashboardCards, setDashboardCards] = useState(DEFAULT_DASHBOARD_CARDS);
+
   // ── Counsellor feature state ─────────────────────────────────────────────
   const [counsellorView, setCounsellorView]         = useState('list');
   const [selectedCounsellor, setSelectedCounsellor] = useState(null);
@@ -777,6 +891,26 @@ export default function App() {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // DASHBOARD CONFIG (admin-editable cards)
+  // ══════════════════════════════════════════════════════════════════════════
+  const fetchDashboardConfig = async (token) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/dashboard-config`, { headers: authHeaders(token) });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.cards) && data.cards.length > 0) {
+        setDashboardCards([...data.cards].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      }
+    } catch (e) { console.error('Dashboard config fetch error:', e); }
+  };
+
+  const navigateToDashboardCard = (card) => {
+    if (card.targetView === 'support') { openSupportHub(); setCurrentView('support'); }
+    else if (card.targetView === 'counsellor') { openCounsellorHub(); setCurrentView('counsellor'); }
+    else if (card.targetView === 'skills') { openSkillsHub(); setCurrentView('skills'); }
+    else setCurrentView(card.targetView);
+  };
 
   // ══════════════════════════════════════════════════════════════════════════
   // AI HEALTH BOT HANDLERS
@@ -1017,6 +1151,7 @@ export default function App() {
               await fetchBookedSessions(d2.token);
               await fetchSupportRequests(d2.token);
               await fetchCourses(d2.token);
+              await fetchDashboardConfig(d2.token);
               // Route based on role
               if (d2.user.role === 'admin') {
                 setCurrentView('admin');
@@ -1042,6 +1177,7 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         await fetchCourses(data.token);
+        await fetchDashboardConfig(data.token);
         showToast(`Welcome back, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
@@ -1065,6 +1201,7 @@ export default function App() {
         await fetchBookedSessions(data.token);
         await fetchSupportRequests(data.token);
         await fetchCourses(data.token);
+        await fetchDashboardConfig(data.token);
         showToast(`Welcome, ${data.user.fullName?.split(' ')[0] || 'there'}`, 'success');
         
         // Route based on user role
@@ -1100,9 +1237,7 @@ export default function App() {
   ];
 
   const resourceNavItems = [
-    { key: 'library',   icon: 'book',     label: 'Library',   onClick: () => showToast('Library coming soon!', 'info') },
     { key: 'saved',     icon: 'bookmark', label: 'Saved',      onClick: () => showToast('Saved items coming soon!', 'info') },
-    { key: 'reminders', icon: 'bell',     label: 'Reminders',  onClick: () => showToast('Reminders coming soon!', 'info') },
     { key: 'downloads', icon: 'download', label: 'Downloads',  onClick: () => showToast('Downloads coming soon!', 'info') },
   ];
 
@@ -1157,11 +1292,11 @@ export default function App() {
     contentBody:     { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
     landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF' },
-    landingHeroSection:   { display: 'flex', width: '100%', flex: '1.2', backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.85) 15%, rgba(255,255,255,0) 35%), url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'flex-start', padding: '20px 60px', boxSizing: 'border-box', position: 'relative' },
+    landingHeroSection:   { display: 'flex', width: '100%', flex: '1.2', backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 22%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.25) 62%, rgba(0,0,0,0.1) 100%), url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'flex-start', padding: '20px 60px', boxSizing: 'border-box', position: 'relative' },
     landingHeroLeft:      { width: '100%', maxWidth: '550px', textAlign: 'left', zIndex: 2 },
     landingHeroTag:       { fontSize: '11px', fontWeight: '800', color: themeColors.magenta, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' },
     landingHeroTitle:     { fontSize: '38px', fontWeight: '800', color: themeColors.textDark, lineHeight: '1.15', margin: '0 0 12px 0' },
-    landingHeroDesc:      { fontSize: '14px', color: '#444444', lineHeight: '1.6', marginBottom: '20px', fontWeight: '500', textAlign: 'justify' },
+    landingHeroDesc:      { fontSize: '14.5px', color: '#1A1A1A', lineHeight: '1.65', marginBottom: '20px', fontWeight: '600', textAlign: 'justify', textShadow: '0 1px 4px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6)' },
     landingHeroBtnGroup:  { display: 'flex', gap: '14px' },
     landingGridSection:   { padding: '20px 60px', flex: '0.8', display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box', backgroundColor: '#FDF8FF', borderTop: '1px solid #F5E6FA' },
     landingInfoCard:      { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '20px', flex: '1', height: '85%', minWidth: '260px', maxWidth: '360px', boxSizing: 'border-box', border: '1px solid #EFE0F5', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
@@ -2289,14 +2424,20 @@ export default function App() {
                   <p style={styles.tipBody}>{language === 'English' ? "Stay hydrated! Drinking enough water helps regulate your menstrual cycle and reduces cramps." : "Nywa amazzi agamala! Okunywa amazzi amangi kukuuyamba okutereeza n'okukendeeza obulumi bw'omukyala."}</p>
                 </div>
               </div>
+
+              {/* ── Dashboard feature cards — now fully admin-editable ── */}
               <div style={styles.featuresGridContainer}>
-                <div style={{ ...styles.featureCard, backgroundColor: '#CCFBF1' }} onClick={() => setCurrentView('aibot')}><span style={styles.featureIcon}><Icon name="chat" size={20} color="#0D9488" /></span><h3 style={{ ...styles.featureTitle, color: '#0D9488' }}>Ask AI Health Bot</h3><p style={{ ...styles.featureDesc, color: '#115E59' }}>Get instant, private answers to your health questions</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#DBEAFE' }} onClick={() => { openSupportHub(); setCurrentView('support'); }}><span style={styles.featureIcon}><Icon name="handshake" size={20} color="#2563EB" /></span><h3 style={{ ...styles.featureTitle, color: '#2563EB' }}>Get Support</h3><p style={{ ...styles.featureDesc, color: '#1E40AF' }}>Access sanitary pads, school fees, food, and more</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#F3E8FF' }} onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); }}><span style={styles.featureIcon}><Icon name="stethoscope" size={20} color="#9333EA" /></span><h3 style={{ ...styles.featureTitle, color: '#9333EA' }}>Talk to Counsellor</h3><p style={{ ...styles.featureDesc, color: '#6B21A8' }}>Book a session or chat live with a professional</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FEF3C7' }} onClick={() => { openSkillsHub(); setCurrentView('skills'); }}><span style={styles.featureIcon}><Icon name="cap" size={20} color="#D97706" /></span><h3 style={{ ...styles.featureTitle, color: '#D97706' }}>Learn Skills</h3><p style={{ ...styles.featureDesc, color: '#92400E' }}>Watch videos, earn certificates, find opportunities</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FEE2E2' }} onClick={() => setCurrentView('emergency')}><span style={styles.featureIcon}><Icon name="alert" size={20} color="#DC2626" /></span><h3 style={{ ...styles.featureTitle, color: '#DC2626' }}>Emergency Help</h3><p style={{ ...styles.featureDesc, color: '#991B1B' }}>Find nearby clinics and emergency contacts</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#FCE7F3' }} onClick={() => setCurrentView('track')}><span style={styles.featureIcon}><Icon name="chart" size={20} color="#DB2777" /></span><h3 style={{ ...styles.featureTitle, color: '#DB2777' }}>Track Health</h3><p style={{ ...styles.featureDesc, color: '#9D174D' }}>Monitor your cycle, symptoms, and health trends</p></div>
-                <div style={{ ...styles.featureCard, backgroundColor: '#E0F2FE' }} onClick={() => setCurrentView('topics')}><span style={styles.featureIcon}><Icon name="book" size={20} color="#0284C7" /></span><h3 style={{ ...styles.featureTitle, color: '#0284C7' }}>Explore Topics</h3><p style={{ ...styles.featureDesc, color: '#075985' }}>Learn about your body, health, and safe decisions</p></div>
+                {dashboardCards.map(card => (
+                  <div
+                    key={card.id}
+                    style={{ ...styles.featureCard, backgroundColor: card.bgColor }}
+                    onClick={() => navigateToDashboardCard(card)}
+                  >
+                    <span style={styles.featureIcon}><Icon name={card.icon} size={20} color={card.textColor} /></span>
+                    <h3 style={{ ...styles.featureTitle, color: card.textColor }}>{card.title}</h3>
+                    <p style={{ ...styles.featureDesc, color: card.descColor }}>{card.description}</p>
+                  </div>
+                ))}
               </div>
 
               <div style={styles.quickAccessSection}>
