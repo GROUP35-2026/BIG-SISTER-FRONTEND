@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import bgImage from './IMAGE.PNG';
 import signBgImage from './SIGN.jpg';
+
+// ── Custom hook for window size ─────────────────────────────────────────────
+function useWindowSize() {
+  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  useEffect(() => {
+    const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return size;
+}
 
 // ── Default dashboard cards (used until the backend config loads) ───────────
 const DEFAULT_DASHBOARD_CARDS = [
@@ -64,8 +75,25 @@ function Icon({ name, size = 18, color = 'currentColor', style }) {
   }
 }
 
-// ── Brand Logo (clickable, replaces the "Big Sister" text wordmark) ──────────
-function BrandLogo({ onClick }) {
+// ── Brand Logo (responsive) ──────────────────────────────────────────────────
+function BrandLogo({ onClick, isMobile }) {
+  if (isMobile) {
+    return (
+      <div
+        onClick={onClick}
+        style={{
+          width: '42px', height: '42px', borderRadius: '13px',
+          background: 'linear-gradient(135deg, #FF6EB4 0%, #C040A0 55%, #5B0FA8 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', flexShrink: 0, boxShadow: '0 4px 10px rgba(144,35,240,0.25)'
+        }}
+        role="button"
+        aria-label="Big Sister home"
+      >
+        <span style={{ fontFamily: "'Arial Black',sans-serif", fontWeight: 900, fontSize: '15px', color: '#FFFFFF', letterSpacing: '-0.5px' }}>BS</span>
+      </div>
+    );
+  }
   return (
     <svg
       onClick={onClick}
@@ -93,8 +121,22 @@ function BrandLogo({ onClick }) {
   );
 }
 
-// ── Compact sidebar wordmark (small pink pill "BS" + label) ─────────────────
-function SidebarBrand({ onClick }) {
+// ── Compact sidebar brand (responsive) ─────────────────────────────────────
+function SidebarBrand({ onClick, isMobile }) {
+  if (isMobile) {
+    return (
+      <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '12px 0' }}>
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '10px',
+          background: 'linear-gradient(135deg, #FF6EB4 0%, #C040A0 55%, #5B0FA8 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 4px 10px rgba(144,35,240,0.25)'
+        }}>
+          <span style={{ fontFamily: "'Arial Black',sans-serif", fontWeight: 900, fontSize: '13px', color: '#FFFFFF' }}>BS</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '18px 20px' }}>
       <div style={{
@@ -144,8 +186,9 @@ function Toast({ message, type = 'success', onClose, showLoader = false, duratio
     }}>
       <style>{`
         @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @media (max-width: 480px) { .toast { width: calc(100% - 32px) !important; right: 16px !important; top: 16px !important; } }
       `}</style>
-      <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+      <div className="toast" style={{ padding: '16px 18px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <div style={{ width: '34px', height: '34px', borderRadius: '50%', backgroundColor: c.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.accent, flexShrink: 0 }}><Icon name={c.icon} size={16} color={c.accent} /></div>
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontSize: '13.5px', fontWeight: '700', color: '#1A1A1A', lineHeight: '1.3' }}>{message}</p>
@@ -162,7 +205,7 @@ function Toast({ message, type = 'success', onClose, showLoader = false, duratio
   );
 }
 
-// ── Confirm Dialog Component (for Admin Tasks) ──────────────────────────────
+// ── Confirm Dialog Component ──────────────────────────────────────────────
 function ConfirmDialog({ isOpen, title, message, onConfirm, onCancel }) {
   if (!isOpen) return null;
   return (
@@ -319,7 +362,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
       case 'overview':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '20px' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: '14px', marginBottom: '6px' }}><Icon name="users" size={16} color="#ccc" /> <span style={{ color: '#34d399', fontSize: '12px' }}>+12%</span></div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>{stats.totalUsers}</div>
@@ -342,7 +385,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
               </div>
             </div>
             
-            <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'flex', gap: '20px', flex: 1, minHeight: 0, flexDirection: window.innerWidth < 768 ? 'column' : 'row' }}>
               <div style={{ flex: 2, background: '#2c223c', borderRadius: '14px', padding: '20px', overflowY: 'auto' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Recent Activity</h4>
                 {activity.map((a, i) => (
@@ -373,25 +416,27 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
       case 'content':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: window.innerWidth < 480 ? 'column' : 'row', gap: '12px', marginBottom: '20px' }}>
               <input type="text" placeholder="Search..." style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
               <button onClick={() => { setEditingContent(null); setContentForm({ title: '', category: 'Health Tips', status: 'Draft', body: '' }); setShowContentModal(true); }} style={{ padding: '10px 24px', borderRadius: '20px', border: 'none', background: 'linear-gradient(135deg, #e91e63, #9333ea)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>+ Add New</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {content.map(c => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', background: '#2c223c', borderRadius: '12px', padding: '16px', marginBottom: '10px' }}>
+                <div key={c.id} style={{ display: 'flex', flexDirection: window.innerWidth < 480 ? 'column' : 'row', alignItems: window.innerWidth < 480 ? 'flex-start' : 'center', background: '#2c223c', borderRadius: '12px', padding: '16px', marginBottom: '10px', gap: '8px' }}>
                   <div style={{ flex: 1, color: '#fff' }}>{c.title}</div>
-                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: '#a78bfa', fontSize: '11px', marginRight: '12px' }}>{c.category}</span>
-                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.status === 'Live' ? '#34d399' : '#fbbf24', fontSize: '11px', marginRight: '12px' }}>{c.status}</span>
-                  <div style={{ color: '#64748b', fontSize: '12px', marginRight: '20px' }}>{new Date(c.created_at).toISOString().slice(0,10)}</div>
-                  <span onClick={() => { setEditingContent(c); setContentForm({ title: c.title, category: c.category, status: c.status, body: c.body }); setShowContentModal(true); }} style={{ cursor: 'pointer', color: '#94a3b8', marginRight: '10px', display: 'inline-flex' }}><Icon name="pencil" size={15} color="#94a3b8" /></span>
-                  <span onClick={() => handleDeleteContent(c.id)} style={{ cursor: 'pointer', color: '#94a3b8', display: 'inline-flex' }}><Icon name="trash" size={15} color="#94a3b8" /></span>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: '#a78bfa', fontSize: '11px' }}>{c.category}</span>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', background: c.status === 'Live' ? '#34d399' : '#fbbf24', fontSize: '11px' }}>{c.status}</span>
+                  <div style={{ color: '#64748b', fontSize: '12px' }}>{new Date(c.created_at).toISOString().slice(0,10)}</div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <span onClick={() => { setEditingContent(c); setContentForm({ title: c.title, category: c.category, status: c.status, body: c.body }); setShowContentModal(true); }} style={{ cursor: 'pointer', color: '#94a3b8', display: 'inline-flex' }}><Icon name="pencil" size={15} color="#94a3b8" /></span>
+                    <span onClick={() => handleDeleteContent(c.id)} style={{ cursor: 'pointer', color: '#94a3b8', display: 'inline-flex' }}><Icon name="trash" size={15} color="#94a3b8" /></span>
+                  </div>
                 </div>
               ))}
             </div>
             {showContentModal && (
-              <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ background: '#2c223c', padding: '30px', borderRadius: '16px', width: '500px', maxWidth: '90%' }}>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                <div style={{ background: '#2c223c', padding: '30px', borderRadius: '16px', width: '500px', maxWidth: '100%' }}>
                   <h3 style={{ color: '#fff', margin: '0 0 20px 0' }}>{editingContent ? 'Edit Content' : 'Create Content'}</h3>
                   <input type="text" placeholder="Title" value={contentForm.title} onChange={e => setContentForm({...contentForm, title: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }} />
                   <select value={contentForm.category} onChange={e => setContentForm({...contentForm, category: e.target.value})} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: 'none', background: '#1e162b', color: '#fff' }}><option>Health Tips</option><option>Learn Skills</option><option>Explore Topics</option></select>
@@ -408,7 +453,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
         );
       case 'users':
         return (
-          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                 <input type="text" placeholder="Search by name or region..." style={{ flex: 1, padding: '10px 16px', borderRadius: '20px', border: 'none', background: '#2c223c', color: '#fff' }} />
@@ -442,10 +487,10 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
         );
       case 'staff':
         return (
-          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>Staff Roster</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 480 ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 {['Dr. Lydia Ouma', 'Nurse Sarah Kato', 'Ruth Namukasa', 'James Okello'].map((s, i) => (
                   <div key={i} style={{ background: '#2c223c', borderRadius: '14px', padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
@@ -483,7 +528,7 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
         );
       case 'appearance':
         return (
-          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>App Text</h4>
@@ -503,14 +548,14 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
                 )}
                 {appearanceForm.dashboardCards.map((card, i) => (
                   <div key={card.id} style={{ background: '#1e162b', borderRadius: '12px', padding: '14px', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: window.innerWidth < 480 ? 'column' : 'row', gap: '8px', marginBottom: '8px' }}>
                       <input value={card.title} onChange={e => updateDashboardCard(card.id, 'title', e.target.value)} placeholder="Title" style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px' }} />
                       <select value={card.icon} onChange={e => updateDashboardCard(card.id, 'icon', e.target.value)} style={{ padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px' }}>
                         {DASHBOARD_ICON_OPTIONS.map(ic => <option key={ic} value={ic}>{ic}</option>)}
                       </select>
                     </div>
                     <input value={card.description} onChange={e => updateDashboardCard(card.id, 'description', e.target.value)} placeholder="Description" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: 'none', background: '#2c223c', color: '#fff', fontSize: '12px', marginBottom: '8px', boxSizing: 'border-box' }} />
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                       <label style={{ color: '#888', fontSize: '11px' }}>BG</label>
                       <input type="color" value={card.bgColor} onChange={e => updateDashboardCard(card.id, 'bgColor', e.target.value)} style={{ width: '28px', height: '24px', border: 'none', borderRadius: '4px', cursor: 'pointer' }} />
                       <label style={{ color: '#888', fontSize: '11px' }}>Text</label>
@@ -553,16 +598,16 @@ function AdminDashboard({ currentAdminView, setCurrentAdminView, onLogout, token
         );
       case 'maintenance':
         return (
-          <div style={{ display: 'flex', height: '100%', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: window.innerWidth < 768 ? 'column' : 'row', height: '100%', gap: '20px' }}>
             <div style={{ flex: 1.5, overflowY: 'auto' }}>
-              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px', display: 'flex', flexDirection: window.innerWidth < 480 ? 'column' : 'row', justifyContent: 'space-between', alignItems: window.innerWidth < 480 ? 'stretch' : 'center', gap: '12px' }}>
                 <div><h4 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="settings" size={16} color="#fff" /> Maintenance Mode</h4><div style={{ color: '#888', fontSize: '12px' }}>App is live. Enable to take it offline for maintenance.</div></div>
                 <button onClick={() => showToast('Maintenance mode toggled!', 'info')} style={{ padding: '8px 20px', borderRadius: '12px', border: '1px solid #444', background: 'transparent', color: '#fff', cursor: 'pointer' }}>Enable</button>
               </div>
               <div style={{ background: '#2c223c', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
                 <h4 style={{ color: '#fff', margin: '0 0 15px 0' }}>System Tasks</h4>
                 {['Database Backup', 'Cache Clear', 'AI Model Sync', 'Security Audit Scan'].map((task, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #3d3052' }}>
+                  <div key={i} style={{ display: 'flex', flexDirection: window.innerWidth < 480 ? 'column' : 'row', justifyContent: 'space-between', alignItems: window.innerWidth < 480 ? 'stretch' : 'center', padding: '12px 0', borderBottom: '1px solid #3d3052', gap: '8px' }}>
                     <div style={{ color: '#fff', fontSize: '14px' }}>{task}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                       <span style={{ color: '#64748b', fontSize: '12px', background: '#1e162b', padding: '2px 8px', borderRadius: '10px' }}>Idle</span>
@@ -713,6 +758,10 @@ function TermsView({ onBack }) {
 // MAIN APPLICATION - ONLY ONE EXPORT DEFAULT BELOW!
 // ══════════════════════════════════════════════════════════════════════════
 export default function App() {
+  const { width } = useWindowSize();
+  const isMobile = width < 768;
+  const isTablet = width < 1024;
+
   const [currentView, setCurrentView]         = useState('landing');
   const [currentAdminView, setCurrentAdminView] = useState('overview');
   const [showPassword, setShowPassword]       = useState(false);
@@ -1288,52 +1337,81 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // STYLES
+  // STYLES (now responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const styles = {
-    container: { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: '#FFF8FD', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', margin: 0, padding: 0 },
+    container: { 
+      position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+      backgroundColor: '#FFF8FD', fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif', 
+      display: 'flex', flexDirection: 'column', boxSizing: 'border-box', 
+      overflow: 'hidden', margin: 0, padding: 0, maxWidth: '100vw'
+    },
 
     appShell:    { display: 'flex', width: '100%', flex: 1, minHeight: 0, boxSizing: 'border-box', overflow: 'hidden' },
     mainColumn:  { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
-    sidebar:            { width: '256px', minWidth: '256px', height: '100%', backgroundColor: '#FFFFFF', borderRight: '1px solid #F0E4F7', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' },
-    sidebarNavScroll:    { flex: 1, padding: '4px 14px 10px 14px', boxSizing: 'border-box' },
-    sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: '18px 10px 8px 10px' },
-    sidebarNavItem:      { display: 'flex', alignItems: 'center', gap: '11px', padding: '9px 12px', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600', color: '#5B5B5B', cursor: 'pointer', marginBottom: '2px', transition: 'background-color 0.15s, color 0.15s' },
+    sidebar: { 
+      width: isMobile ? '64px' : '256px', 
+      minWidth: isMobile ? '64px' : '256px', 
+      height: '100%', backgroundColor: '#FFFFFF', borderRight: '1px solid #F0E4F7', 
+      display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' 
+    },
+    sidebarNavScroll:    { flex: 1, padding: isMobile ? '4px 0' : '4px 14px 10px 14px', boxSizing: 'border-box' },
+    sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: isMobile ? '12px 0 6px 0' : '18px 10px 8px 10px', textAlign: isMobile ? 'center' : 'left' },
+    sidebarNavItem:      { 
+      display: 'flex', alignItems: 'center', gap: '11px', padding: isMobile ? '10px 0' : '9px 12px', 
+      borderRadius: '12px', fontSize: isMobile ? '0' : '13.5px', fontWeight: '600', color: '#5B5B5B', 
+      cursor: 'pointer', marginBottom: '2px', transition: 'background-color 0.15s, color 0.15s',
+      justifyContent: isMobile ? 'center' : 'flex-start'
+    },
     sidebarNavItemActive:{ backgroundColor: '#F3E8FF', color: '#9023F0', fontWeight: '800' },
     sidebarNavIcon:      { width: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-    sidebarDivider:      { height: '1px', backgroundColor: '#F0E4F7', margin: '10px 10px' },
-    sidebarBottomCard:   { margin: '10px 14px 16px 14px', backgroundColor: '#FDEBF5', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: '10px', boxSizing: 'border-box' },
+    sidebarDivider:      { height: '1px', backgroundColor: '#F0E4F7', margin: isMobile ? '6px 10px' : '10px 10px' },
+    sidebarBottomCard:   { margin: '10px 14px 16px 14px', backgroundColor: '#FDEBF5', borderRadius: '16px', padding: '14px 16px', display: isMobile ? 'none' : 'flex', alignItems: 'flex-start', gap: '10px', boxSizing: 'border-box' },
     sidebarBottomIcon:   { flexShrink: 0, display: 'flex', alignItems: 'center' },
     sidebarBottomTitle:  { fontSize: '12.5px', fontWeight: '800', color: '#C0288E', margin: 0 },
     sidebarBottomDesc:   { fontSize: '11px', color: '#B36FA0', margin: '2px 0 0 0', fontWeight: '500', lineHeight: '1.35' },
 
-    navbar: { width: '100%', height: '64px', backgroundColor: '#FFFFFF', padding: '0 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', borderBottom: '1px solid #EAEAEA', zIndex: 50, flexShrink: 0 },
-    navBrandGroup:   { display: 'flex', alignItems: 'center', gap: '30px' },
+    navbar: { 
+      width: '100%', height: '64px', backgroundColor: '#FFFFFF', padding: isMobile ? '0 16px' : '0 40px', 
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', 
+      borderBottom: '1px solid #EAEAEA', zIndex: 50, flexShrink: 0 
+    },
+    navBrandGroup:   { display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '30px' },
     navBrandText:    { fontSize: '24px', fontWeight: '800', color: themeColors.magenta, cursor: 'pointer' },
-    navLinkItem:     { fontSize: '14px', fontWeight: '600', color: '#A155B9', textDecoration: 'none', cursor: 'pointer', marginRight: '20px' },
-    navAuthButtons:  { display: 'flex', alignItems: 'center', gap: '12px' },
-    navLoginBtn:     { background: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '20px', padding: '6px 20px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
-    navRegisterBtn:  { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: '7px 22px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' },
-    userProfileTag:  { fontSize: '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '8px' },
+    navLinkItem:     { fontSize: isMobile ? '12px' : '14px', fontWeight: '600', color: '#A155B9', textDecoration: 'none', cursor: 'pointer', marginRight: isMobile ? '10px' : '20px' },
+    navAuthButtons:  { display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px' },
+    navLoginBtn:     { background: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '20px', padding: isMobile ? '4px 12px' : '6px 20px', fontSize: isMobile ? '11px' : '14px', fontWeight: '600', cursor: 'pointer' },
+    navRegisterBtn:  { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: isMobile ? '5px 14px' : '7px 22px', fontSize: isMobile ? '11px' : '14px', fontWeight: '600', cursor: 'pointer' },
+    userProfileTag:  { fontSize: isMobile ? '11px' : '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '4px' },
     contentBody:     { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
     landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF' },
-    landingHeroSection:   { display: 'flex', width: '100%', flex: '1.2', backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 22%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.25) 62%, rgba(0,0,0,0.1) 100%), url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'flex-start', padding: '20px 60px', boxSizing: 'border-box', position: 'relative' },
+    landingHeroSection:   { 
+      display: 'flex', width: '100%', flex: '1.2', 
+      backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 22%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.25) 62%, rgba(0,0,0,0.1) 100%), url(${bgImage})`, 
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', 
+      alignItems: 'center', justifyContent: 'flex-start', padding: isMobile ? '20px 16px' : '20px 60px', 
+      boxSizing: 'border-box', position: 'relative' 
+    },
     landingHeroLeft:      { width: '100%', maxWidth: '550px', textAlign: 'left', zIndex: 2 },
-    landingHeroTag:       { fontSize: '11px', fontWeight: '800', color: themeColors.magenta, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' },
-    landingHeroTitle:     { fontSize: '38px', fontWeight: '800', color: themeColors.textDark, lineHeight: '1.15', margin: '0 0 12px 0' },
-    landingHeroDesc:      { fontSize: '14.5px', color: '#1A1A1A', lineHeight: '1.65', marginBottom: '20px', fontWeight: '600', textAlign: 'justify', textShadow: '0 1px 4px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6)' },
-    landingHeroBtnGroup:  { display: 'flex', gap: '14px' },
-    landingGridSection:   { padding: '20px 60px', flex: '0.8', display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box', backgroundColor: '#FDF8FF', borderTop: '1px solid #F5E6FA' },
-    landingInfoCard:      { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '20px', flex: '1', height: '85%', minWidth: '260px', maxWidth: '360px', boxSizing: 'border-box', border: '1px solid #EFE0F5', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
+    landingHeroTag:       { fontSize: isMobile ? '10px' : '11px', fontWeight: '800', color: themeColors.magenta, textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' },
+    landingHeroTitle:     { fontSize: isMobile ? '24px' : '38px', fontWeight: '800', color: themeColors.textDark, lineHeight: '1.15', margin: '0 0 12px 0' },
+    landingHeroDesc:      { fontSize: isMobile ? '12px' : '14.5px', color: '#1A1A1A', lineHeight: '1.65', marginBottom: '20px', fontWeight: '600', textAlign: 'justify', textShadow: '0 1px 4px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6)' },
+    landingHeroBtnGroup:  { display: 'flex', gap: '14px', flexWrap: 'wrap' },
+    landingGridSection:   { 
+      padding: isMobile ? '16px 16px' : '20px 60px', flex: '0.8', 
+      display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', 
+      justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box', backgroundColor: '#FDF8FF', borderTop: '1px solid #F5E6FA' 
+    },
+    landingInfoCard:      { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '20px', flex: '1', height: 'auto', minWidth: '0', maxWidth: isMobile ? '100%' : '360px', boxSizing: 'border-box', border: '1px solid #EFE0F5', textAlign: 'left', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' },
     landingCardIcon:      { marginBottom: '10px', display: 'flex' },
     landingCardTitle:     { fontSize: '15px', fontWeight: '700', color: themeColors.textDark, marginBottom: '6px' },
     landingCardDesc:      { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0, textAlign: 'justify' },
 
     authCardWrapper: { display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'center', padding: '20px 16px', boxSizing: 'border-box' },
-    authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: '24px', textAlign: 'center', overflow: 'hidden' },
-    authCardTitle:   { fontSize: '20px', fontWeight: '700', color: themeColors.textDark, margin: '0 0 16px 0', letterSpacing: '-0.3px' },
+    authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: isMobile ? '100%' : '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: isMobile ? '20px' : '24px', textAlign: 'center', overflow: 'hidden' },
+    authCardTitle:   { fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: themeColors.textDark, margin: '0 0 16px 0', letterSpacing: '-0.3px' },
     authSubmitBtn:   { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '25px', padding: '11px 24px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginTop: '6px', marginBottom: '10px' },
     inputGroup:      { marginBottom: '10px', textAlign: 'left', position: 'relative' },
     inputLabel:      { display: 'block', fontSize: '11px', fontWeight: '700', color: '#A0A0A0', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -1343,33 +1421,37 @@ export default function App() {
     popupBox: { backgroundColor: '#FFFFFF', borderRadius: '16px', width: '90%', maxWidth: '360px', padding: '24px', boxShadow: '0px 8px 24px rgba(0,0,0,0.3)', textAlign: 'left', boxSizing: 'border-box' },
 
     dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
-    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
-    dashboardWelcomeText:  { fontSize: '16px', fontWeight: '700', letterSpacing: '-0.2px' },
-    dashboardMainView:     { padding: '16px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%', flex: 1, minHeight: 0 },
+    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: isMobile ? '10px 16px' : '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
+    dashboardWelcomeText:  { fontSize: isMobile ? '13px' : '16px', fontWeight: '700', letterSpacing: '-0.2px' },
+    dashboardMainView:     { padding: isMobile ? '12px 12px' : '16px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%', flex: 1, minHeight: 0 },
     tipOfTheDayCard:       { width: '100%', backgroundColor: '#FA539B', borderRadius: '14px', padding: '10px 18px', color: '#FFFFFF', boxSizing: 'border-box', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(250,83,155,0.15)', flexShrink: 0 },
     tipTitle:              { fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, marginBottom: '2px' },
     tipBody:               { fontSize: '13px', fontWeight: '500', margin: 0, lineHeight: '1.3' },
-    featuresGridContainer: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 },
-    featureCard:  { borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: '110px' },
+    featuresGridContainer: { 
+      display: 'grid', 
+      gridTemplateColumns: isMobile ? (width < 480 ? '1fr 1fr' : '1fr 1fr') : 'repeat(4, 1fr)', 
+      gap: '12px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 
+    },
+    featureCard:  { borderRadius: '14px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: isMobile ? '90px' : '110px' },
     featureIcon:  { marginBottom: '8px', display: 'flex' },
-    featureTitle: { fontSize: '14px', fontWeight: '700', marginBottom: '4px' },
-    featureDesc:  { fontSize: '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
+    featureTitle: { fontSize: isMobile ? '12px' : '14px', fontWeight: '700', marginBottom: '4px' },
+    featureDesc:  { fontSize: isMobile ? '10px' : '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
 
     quickAccessSection:   { width: '100%', boxSizing: 'border-box', flex: 1, minHeight: 0 },
     quickAccessTitle:     { fontSize: '14px', fontWeight: '800', color: themeColors.purple, margin: '0 0 10px 0' },
     quickAccessRow:        { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-    quickAccessPill:       { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #F0E4F7', borderRadius: '14px', padding: '11px 16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#333333', flex: '1 1 180px', minWidth: '180px', transition: 'transform 0.15s, box-shadow 0.15s' },
+    quickAccessPill:       { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#FFFFFF', border: '1px solid #F0E4F7', borderRadius: '14px', padding: '11px 16px', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', cursor: 'pointer', fontSize: '12.5px', fontWeight: '700', color: '#333333', flex: '1 1 180px', minWidth: '150px', transition: 'transform 0.15s, box-shadow 0.15s' },
     quickAccessIconWrap:   (bg) => ({ width: '30px', height: '30px', borderRadius: '9px', backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
 
     counsellorWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FBF2FC' },
-    counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
+    counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
     counsellorBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
-    counsellorHeaderTitle:    { fontSize: '20px', fontWeight: '800', color: themeColors.purple, margin: 0 },
-    counsellorHeaderSubtitle: { fontSize: '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' },
-    mySessionsLink:           { marginLeft: 'auto', fontSize: '13px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer', backgroundColor: '#F3E8FF', padding: '8px 16px', borderRadius: '18px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' },
-    counsellorListBody:       { padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
-    counsellorCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
-    counsellorCardTopRow:     { display: 'flex', alignItems: 'flex-start', gap: '14px' },
+    counsellorHeaderTitle:    { fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: themeColors.purple, margin: 0 },
+    counsellorHeaderSubtitle: { fontSize: isMobile ? '11px' : '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' },
+    mySessionsLink:           { marginLeft: 'auto', fontSize: isMobile ? '11px' : '13px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer', backgroundColor: '#F3E8FF', padding: isMobile ? '6px 12px' : '8px 16px', borderRadius: '18px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' },
+    counsellorListBody:       { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
+    counsellorCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
+    counsellorCardTopRow:     { display: 'flex', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap' },
     counsellorAvatarCircle:   { width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     counsellorInfoBlock:      { flex: 1, minWidth: 0 },
     counsellorName:           { fontSize: '15.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
@@ -1379,7 +1461,7 @@ export default function App() {
     counsellorTag:            { fontSize: '11.5px', fontWeight: '700', color: themeColors.purple, backgroundColor: '#F3E8FF', padding: '4px 10px', borderRadius: '12px' },
     availabilityBadgeAvailable: { fontSize: '11.5px', fontWeight: '700', color: '#16A34A', backgroundColor: '#DCFCE7', padding: '5px 12px', borderRadius: '14px', whiteSpace: 'nowrap', flexShrink: 0 },
     availabilityBadgeNext:      { fontSize: '11.5px', fontWeight: '700', color: '#666666', backgroundColor: '#F1F1F1', padding: '5px 12px', borderRadius: '14px', whiteSpace: 'nowrap', flexShrink: 0 },
-    counsellorActionRow:    { display: 'flex', gap: '12px' },
+    counsellorActionRow:    { display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px' },
     chatNowBtn:             { flex: 1, backgroundColor: themeColors.purple, color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     bookSessionBtn:         { flex: 1, backgroundColor: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     groupSessionCard:       { background: 'linear-gradient(135deg, #C026D3 0%, #9023F0 100%)', borderRadius: '18px', padding: '20px', color: '#FFFFFF', boxSizing: 'border-box' },
@@ -1387,18 +1469,18 @@ export default function App() {
     groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0', textAlign: 'justify' },
     joinGroupBtn:           { width: '100%', backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer' },
 
-    chatBody:           { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
+    chatBody:           { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '20px 16px' : '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
     chatAvatarLarge:    { width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
     chatCounsellorName: { fontSize: '17px', fontWeight: '800', color: themeColors.purple, margin: '0 0 2px 0' },
     chatCounsellorRole: { fontSize: '13px', color: '#A56BC4', margin: '0 0 24px 0', fontWeight: '600' },
     chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px', textAlign: 'justify' },
 
-    bookingBody:             { padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
+    bookingBody:             { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
     bookingCounsellorBanner: { borderRadius: '18px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', color: '#FFFFFF' },
     bookingAvatarCircle:     { width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     bookingPanel:            { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
     bookingPanelLabel:       { fontSize: '13px', fontWeight: '700', color: themeColors.textDark, marginBottom: '12px' },
-    timeSlotGrid:            { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '10px' },
+    timeSlotGrid:            { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '10px' },
     timeSlotBtn:             { padding: '12px 10px', borderRadius: '14px', border: '1.5px solid #EAEAEA', backgroundColor: '#FAFAFA', fontSize: '13px', fontWeight: '700', color: '#555555', cursor: 'pointer', textAlign: 'center' },
     timeSlotBtnSelected:     { backgroundColor: themeColors.purple, borderColor: themeColors.purple, color: '#FFFFFF' },
     noteTextarea:            { width: '100%', minHeight: '70px', borderRadius: '14px', border: 'none', backgroundColor: '#F4F5F7', padding: '14px', fontSize: '13px', color: '#333333', boxSizing: 'border-box', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
@@ -1420,7 +1502,7 @@ export default function App() {
 
     mySessionsEmptyState: { textAlign: 'center', padding: '60px 32px', color: '#999999' },
     sessionCard:          { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' },
-    sessionCardTopRow:    { display: 'flex', alignItems: 'center', gap: '12px' },
+    sessionCardTopRow:    { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
     sessionCardAvatar:    { width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     sessionCardName:      { fontSize: '14.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
     sessionCardRole:      { fontSize: '12px', color: '#888888', margin: '1px 0 0 0', fontWeight: '600' },
@@ -1437,11 +1519,11 @@ export default function App() {
     deleteConfirmNoBtn:   { backgroundColor: '#FFFFFF', color: '#666666', border: '1px solid #E0E0E0', borderRadius: '12px', padding: '7px 12px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer' },
 
     supportWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#EEF2FF' },
-    supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' },
+    supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
     supportBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#3B82F6', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
-    supportHeaderTitle:    { fontSize: '20px', fontWeight: '800', color: '#3B82F6', margin: 0 },
-    supportHeaderSubtitle: { fontSize: '12.5px', color: '#6366F1', margin: 0, fontWeight: '500' },
-    supportListBody:       { padding: '0 32px 32px 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px', boxSizing: 'border-box' },
+    supportHeaderTitle:    { fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: '#3B82F6', margin: 0 },
+    supportHeaderSubtitle: { fontSize: isMobile ? '11px' : '12.5px', color: '#6366F1', margin: 0, fontWeight: '500' },
+    supportListBody:       { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' },
     supportCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px', transition: 'transform 0.15s, box-shadow 0.15s' },
     supportCardIcon:       { width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     supportCardTitle:      { fontSize: '15px', fontWeight: '800', color: '#1A1A1A', margin: 0 },
@@ -1454,7 +1536,7 @@ export default function App() {
   // ══════════════════════════════════════════════════════════════════════════
   const renderSidebar = () => (
     <aside style={styles.sidebar} className="no-scrollbar">
-      <SidebarBrand onClick={() => setCurrentView('dashboard')} />
+      <SidebarBrand onClick={() => setCurrentView('dashboard')} isMobile={isMobile} />
       <div style={styles.sidebarNavScroll}>
         {primaryNavItems.map(item => (
           <div
@@ -1465,12 +1547,30 @@ export default function App() {
             onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
             <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color={isNavItemActive(item.key) ? '#9023F0' : '#5B5B5B'} /></span>
-            <span>{item.label}</span>
+            {!isMobile && <span>{item.label}</span>}
           </div>
         ))}
 
-        
+        {!isMobile && (
+          <>
+            <div style={styles.sidebarDivider} />
+            <div style={styles.sidebarSectionLabel}>Resources</div>
+            {resourceNavItems.map(item => (
+              <div
+                key={item.key}
+                style={{ ...styles.sidebarNavItem, ...(isNavItemActive(item.key) ? styles.sidebarNavItemActive : {}) }}
+                onClick={item.onClick}
+                onMouseEnter={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = '#FBF2FC'; }}
+                onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
+              >
+                <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color={isNavItemActive(item.key) ? '#9023F0' : '#5B5B5B'} /></span>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </>
+        )}
 
+        <div style={styles.sidebarDivider} />
         <div style={styles.sidebarSectionLabel}>Account</div>
         {accountNavItems.map(item => (
           <div
@@ -1481,23 +1581,31 @@ export default function App() {
             onMouseLeave={e => { if (!isNavItemActive(item.key)) e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
             <span style={styles.sidebarNavIcon}><Icon name={item.icon} size={16} color={isNavItemActive(item.key) ? '#9023F0' : '#5B5B5B'} /></span>
-            <span>{item.label}</span>
+            {!isMobile && <span>{item.label}</span>}
           </div>
         ))}
       </div>
 
-      <div style={styles.sidebarBottomCard}>
-        <span style={styles.sidebarBottomIcon}><Icon name="badge" size={20} color="#C0288E" /></span>
-        <div>
-          <p style={styles.sidebarBottomTitle}>You're doing great</p>
-          <p style={styles.sidebarBottomDesc}>Take a moment for yourself today.</p>
+      {!isMobile && (
+        <div style={styles.sidebarBottomCard}>
+          <span style={styles.sidebarBottomIcon}><Icon name="badge" size={20} color="#C0288E" /></span>
+          <div>
+            <p style={styles.sidebarBottomTitle}>You're doing great</p>
+            <p style={styles.sidebarBottomDesc}>Take a moment for yourself today.</p>
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 
+  // ── Support, Counsellor, Profile, AI, Skills, Track, Emergency, Topics renderers ──
+  // (These are unchanged from original except for responsiveness already handled via styles)
+  // To keep the final code manageable, we'll reuse the render functions from the original,
+  // but they all use the responsive styles object defined above.
+  // We'll copy them from the original file.
+
   // ══════════════════════════════════════════════════════════════════════════
-  // SUPPORT FEATURE RENDERER
+  // SUPPORT FEATURE RENDERER (uses styles from above)
   // ══════════════════════════════════════════════════════════════════════════
   const renderSupportFeature = () => {
     const cat = selectedSupport;
@@ -1538,7 +1646,7 @@ export default function App() {
         )}
 
         {supportView === 'detail' && cat && (
-          <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
             <div style={{ borderRadius: '18px', background: cat.gradient, padding: '28px 24px', color: '#FFFFFF' }}>
               <div style={{ marginBottom: '10px' }}><Icon name={cat.icon} size={30} color="#FFFFFF" /></div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '800' }}>{cat.label}</h3>
@@ -1578,7 +1686,7 @@ export default function App() {
         )}
 
         {supportView === 'myrequests' && (
-          <div style={{ padding: '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
             {supportRequests.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 32px', color: '#999999' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="clipboard" size={30} color="#999999" /></div>
@@ -1620,7 +1728,7 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // COUNSELLOR FEATURE RENDERER
+  // COUNSELLOR FEATURE RENDERER (uses styles from above)
   // ══════════════════════════════════════════════════════════════════════════
   const renderCounsellorFeature = () => {
     const handleBack = () => {
@@ -1777,8 +1885,8 @@ export default function App() {
     );
   };
 
-// ══════════════════════════════════════════════════════════════════════════
-  // MY PROFILE FEATURE RENDERER
+  // ══════════════════════════════════════════════════════════════════════════
+  // MY PROFILE FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderProfileFeature = () => {
     if (!currentUser) return null;
@@ -1800,20 +1908,19 @@ export default function App() {
       <div style={{ width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF7FC' }} className="no-scrollbar">
 
         {/* Header banner */}
-        <div style={{ background: themeColors.gradientBg, padding: '28px 40px' }}>
+        <div style={{ background: themeColors.gradientBg, padding: isMobile ? '20px 16px' : '28px 40px' }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.3px' }}>My Profile</h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '500' }}>
+            <h2 style={{ margin: 0, fontSize: isMobile ? '18px' : '22px', fontWeight: '800', color: '#FFFFFF', letterSpacing: '-0.3px' }}>My Profile</h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: isMobile ? '12px' : '13px', color: 'rgba(255,255,255,0.85)', fontWeight: '500' }}>
               View and manage your profile information and account settings
             </p>
           </div>
         </div>
 
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '28px 40px 60px 40px', boxSizing: 'border-box' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '280px 300px 1fr', gap: '20px', alignItems: 'start' }}>
-
-            {/* ── Left: Avatar summary card ── */}
-            <div style={{ ...cardStyle, padding: '28px 22px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: isMobile ? '16px 16px 40px 16px' : '28px 40px 60px 40px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', alignItems: 'start' }}>
+            {/* Left: Avatar summary card */}
+            <div style={{ ...cardStyle, padding: '28px 22px', width: isMobile ? '100%' : '280px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ position: 'relative', marginBottom: '14px' }}>
                   <div style={{
@@ -1864,8 +1971,8 @@ export default function App() {
               </button>
             </div>
 
-            {/* ── Middle: Settings menu ── */}
-            <div style={{ ...cardStyle, padding: '10px', display: 'flex', flexDirection: 'column', gap: '2px', height: 'fit-content' }}>
+            {/* Middle: Settings menu */}
+            <div style={{ ...cardStyle, padding: '10px', display: 'flex', flexDirection: 'column', gap: '2px', height: 'fit-content', width: isMobile ? '100%' : '300px' }}>
               {settingsMenu.map((item, idx) => {
                 const active = profileSection === item.key;
                 const isDanger = item.key === 'delete';
@@ -1895,8 +2002,8 @@ export default function App() {
               })}
             </div>
 
-            {/* ── Right: Editable panel ── */}
-            <div style={{ ...cardStyle, padding: '28px 32px', minHeight: '460px' }}>
+            {/* Right: Editable panel */}
+            <div style={{ ...cardStyle, padding: isMobile ? '20px' : '28px 32px', minHeight: '460px', width: isMobile ? '100%' : '1fr' }}>
 
               {profileSection === 'delete' ? (
                 <div>
@@ -1943,7 +2050,7 @@ export default function App() {
                   <p style={{ fontSize: '12px', color: '#999999', margin: '0 0 24px 0' }}>Update your personal details and how others see you.</p>
 
                   <form onSubmit={handleSaveProfile}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '18px' }}>
                       <div>
                         <label style={styles.inputLabel}>Full Name</label>
                         <input type="text" style={styles.inputField} value={profileForm.fullName} onChange={e => updateProfileField('fullName', e.target.value)} />
@@ -1993,7 +2100,7 @@ export default function App() {
 
                     <div style={{ marginBottom: '24px', paddingTop: '18px', borderTop: '1px solid #F3EAFA' }}>
                       <label style={styles.inputLabel}>Profile Photo</label>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', flexWrap: 'wrap' }}>
                         <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: '#F3E8FF', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: themeColors.purple, flexShrink: 0, border: '2px solid #FFFFFF', boxShadow: '0 2px 8px rgba(144,35,240,0.12)' }}>
                           {avatarSrc ? <img src={avatarSrc} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (profileForm.fullName?.charAt(0)?.toUpperCase() || '?')}
                         </div>
@@ -2023,38 +2130,38 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // AI HEALTH BOT FEATURE RENDERER
+  // AI HEALTH BOT FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderAIBotFeature = () => (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden', boxSizing: 'border-box', backgroundColor: '#F0FDFA' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)', padding: '18px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)', padding: isMobile ? '14px 16px' : '18px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
         <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icon name="sparkle" size={17} color="#FFFFFF" />
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#FFFFFF' }}>AI Health Bot</h2>
+            <h2 style={{ margin: 0, fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#FFFFFF' }}>AI Health Bot</h2>
           </div>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Always available · Always private</p>
+          <p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Always available · Always private</p>
         </div>
         <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#0D9488" /> Private</span>
       </div>
 
-      <div style={{ padding: '16px 32px 0 32px', display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0, boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? '12px 16px 0 16px' : '16px 32px 0 32px', display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0, boxSizing: 'border-box' }}>
         {aiBotQuickQuestions.map(item => (
-          <span key={item.q} onClick={() => handleAiBotSend(item.q)} style={{ fontSize: '12.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', border: '1.5px solid #99F6E4', borderRadius: '18px', padding: '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{item.q}</span>
+          <span key={item.q} onClick={() => handleAiBotSend(item.q)} style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', border: '1.5px solid #99F6E4', borderRadius: '18px', padding: isMobile ? '6px 12px' : '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{item.q}</span>
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 32px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }} className="no-scrollbar">
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px' : '20px 32px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }} className="no-scrollbar">
         {aiBotMessages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexDirection: msg.from === 'user' ? 'row-reverse' : 'row' }}>
             {msg.from === 'bot' && <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="sparkle" size={14} color="#FFFFFF" /></div>}
-            <div style={{ maxWidth: '65%', backgroundColor: msg.from === 'user' ? '#0D9488' : '#FFFFFF', color: msg.from === 'user' ? '#FFFFFF' : '#333333', borderRadius: '16px', padding: '12px 16px', fontSize: '13.5px', lineHeight: '1.5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textAlign: 'justify' }}>{msg.text}</div>
+            <div style={{ maxWidth: '80%', backgroundColor: msg.from === 'user' ? '#0D9488' : '#FFFFFF', color: msg.from === 'user' ? '#FFFFFF' : '#333333', borderRadius: '16px', padding: '12px 16px', fontSize: isMobile ? '13px' : '13.5px', lineHeight: '1.5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textAlign: 'justify' }}>{msg.text}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ padding: '14px 32px', flexShrink: 0, backgroundColor: '#F0FDFA', borderTop: '1px solid #CCFBF1', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? '12px 16px' : '14px 32px', flexShrink: 0, backgroundColor: '#F0FDFA', borderTop: '1px solid #CCFBF1', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
           <input type="text" placeholder="Ask your health question..." value={aiBotInput} onChange={e => setAiBotInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiBotSend(); }} style={{ flex: 1, padding: '12px 18px', borderRadius: '24px', border: '1.5px solid #99F6E4', backgroundColor: '#FFFFFF', fontSize: '13px', color: '#333333', outline: 'none', boxSizing: 'border-box' }} />
           <button onClick={() => handleAiBotSend()} style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: '#0D9488', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}><Icon name="send" size={17} color="#FFFFFF" /></button>
@@ -2065,11 +2172,9 @@ export default function App() {
   );
 
   // ══════════════════════════════════════════════════════════════════════════
-  // LEARN SKILLS FEATURE RENDERER (backend-connected: list view + detail view)
+  // LEARN SKILLS FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderSkillsFeature = () => {
-
-    // ── COURSE DETAIL VIEW ─────────────────────────────────────────────────
     if (skillsView === 'detail' && selectedCourse) {
       const c = selectedCourse;
       const points = (c.learningPoints && c.learningPoints.length) ? c.learningPoints : ['Course content coming soon'];
@@ -2078,17 +2183,17 @@ export default function App() {
 
       return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
             <button onClick={() => { setSkillsView('list'); setSelectedCourse(null); }} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.color, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={c.color} /></button>
-            <h2 style={{ fontSize: '19px', fontWeight: '800', color: c.color, margin: 0 }}>{c.title}</h2>
+            <h2 style={{ fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: c.color, margin: 0 }}>{c.title}</h2>
           </div>
 
-          <div style={{ padding: '0 32px 32px 32px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
             <div style={{ borderRadius: '18px', backgroundColor: c.color, backgroundImage: 'radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 60%)', padding: '26px 24px', color: '#FFFFFF', marginBottom: '18px', boxSizing: 'border-box' }}>
               <div style={{ fontSize: '34px', marginBottom: '10px', lineHeight: 1 }}>{c.icon}</div>
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '21px', fontWeight: '800' }}>{c.title}</h3>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '18px' : '21px', fontWeight: '800' }}>{c.title}</h3>
               <p style={{ margin: '0 0 14px 0', fontSize: '13px', opacity: 0.92, lineHeight: '1.5' }}>{c.description}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '18px' }}>
                 <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="clock" size={14} color="#FFFFFF" /> {c.durationWeeks} weeks</span>
                 <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="play" size={13} color="#FFFFFF" /> {c.lessonsCount} lessons</span>
                 <span style={{ fontSize: '12.5px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.95 }}><Icon name="badge" size={14} color="#FFFFFF" /> Certificate Included</span>
@@ -2134,22 +2239,22 @@ export default function App() {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#D97706', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#D97706" /></button>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#D97706', margin: 0 }}>Learn Skills</h2>
-            <p style={{ fontSize: '12.5px', color: '#B45309', margin: 0, fontWeight: '500' }}>Free courses · Earn certificates</p>
+            <h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#D97706', margin: 0 }}>Learn Skills</h2>
+            <p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#B45309', margin: 0, fontWeight: '500' }}>Free courses · Earn certificates</p>
           </div>
         </div>
 
-        <div style={{ padding: '0 32px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 16px' : '0 32px', boxSizing: 'border-box' }}>
           {coursesLoading && (
             <div style={{ textAlign: 'center', padding: '50px 20px', color: '#B45309', fontSize: '13px', fontWeight: '600' }}>Loading courses…</div>
           )}
 
           {!coursesLoading && continueCourse && (
             <div style={{ background: `linear-gradient(135deg, ${continueCourse.color} 0%, ${continueCourse.color}CC 100%)`, borderRadius: '18px', padding: '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', marginBottom: '10px', gap: '14px' }}>
                 <div>
                   <p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9 }}>Continue learning</p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800' }}>{continueCourse.title}</p>
@@ -2164,7 +2269,7 @@ export default function App() {
           )}
 
           {!coursesLoading && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               {courses.map(course => (
                 <div key={course.id} onClick={() => handleOpenCourse(course)} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '13px', backgroundColor: `${course.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '12px' }}>{course.icon}</div>
@@ -2205,7 +2310,7 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // TRACK HEALTH FEATURE RENDERER
+  // TRACK HEALTH FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderTrackHealthFeature = () => {
     const weekDays = ['Su','Mo','Tu','We','Th','Fr','Sa'];
@@ -2223,28 +2328,28 @@ export default function App() {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5FA' }} className="no-scrollbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#DB2777', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#DB2777" /></button>
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#DB2777', margin: 0 }}>Track Health</h2>
-            <p style={{ fontSize: '12.5px', color: '#C0288E', margin: 0, fontWeight: '500' }}>Cycle & symptom tracker</p>
+            <h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#DB2777', margin: 0 }}>Track Health</h2>
+            <p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#C0288E', margin: 0, fontWeight: '500' }}>Cycle & symptom tracker</p>
           </div>
           <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#DB2777', backgroundColor: '#FCE7F3', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#DB2777" /> Private</span>
         </div>
 
-        <div style={{ padding: '0 32px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 16px' : '0 32px', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '18px', overflow: 'hidden' }}>
             {[{ label: 'Cycle Day', value: '17' }, { label: 'Next Period', value: '12 days' }, { label: 'Avg Cycle', value: '28d' }].map((s, i) => (
-              <div key={s.label} style={{ flex: 1, padding: '16px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5E6F0' : 'none' }}>
+              <div key={s.label} style={{ flex: 1, padding: isMobile ? '12px' : '16px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5E6F0' : 'none' }}>
                 <p style={{ margin: 0, fontSize: '11.5px', color: '#999999', fontWeight: '600' }}>{s.label}</p>
-                <p style={{ margin: '4px 0 0 0', fontSize: '22px', color: '#DB2777', fontWeight: '800' }}>{s.value}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: isMobile ? '18px' : '22px', color: '#DB2777', fontWeight: '800' }}>{s.value}</p>
               </div>
             ))}
           </div>
 
           <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '5px', marginBottom: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
             {[{ key: 'calendar', label: 'Calendar' }, { key: 'symptoms', label: 'Symptoms' }, { key: 'insights', label: 'Insights' }].map(tab => (
-              <div key={tab.key} onClick={() => setTrackHealthTab(tab.key)} style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: '16px', cursor: 'pointer', fontSize: '13.5px', fontWeight: '700', backgroundColor: trackHealthTab === tab.key ? '#DB2777' : 'transparent', color: trackHealthTab === tab.key ? '#FFFFFF' : '#888888' }}>{tab.label}</div>
+              <div key={tab.key} onClick={() => setTrackHealthTab(tab.key)} style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: '16px', cursor: 'pointer', fontSize: isMobile ? '12px' : '13.5px', fontWeight: '700', backgroundColor: trackHealthTab === tab.key ? '#DB2777' : 'transparent', color: trackHealthTab === tab.key ? '#FFFFFF' : '#888888' }}>{tab.label}</div>
             ))}
           </div>
 
@@ -2260,7 +2365,7 @@ export default function App() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
                 {juneCalendarCells.map((day, i) => (
-                  <div key={i} style={{ aspectRatio: '1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', ...getDayStyle(day) }}>{day || ''}</div>
+                  <div key={i} style={{ aspectRatio: '1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '12px' : '13px', ...getDayStyle(day) }}>{day || ''}</div>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: '18px', marginTop: '18px', flexWrap: 'wrap' }}>
@@ -2275,7 +2380,7 @@ export default function App() {
               <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>How are you feeling today?</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {symptomsList.map(s => (
-                  <span key={s} onClick={() => toggleSymptom(s)} style={{ fontSize: '12.5px', fontWeight: '700', padding: '9px 16px', borderRadius: '18px', cursor: 'pointer', backgroundColor: loggedSymptoms.includes(s) ? '#DB2777' : '#FDF2F8', color: loggedSymptoms.includes(s) ? '#FFFFFF' : '#DB2777', border: `1.5px solid ${loggedSymptoms.includes(s) ? '#DB2777' : '#FBCFE8'}` }}>{s}</span>
+                  <span key={s} onClick={() => toggleSymptom(s)} style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '700', padding: isMobile ? '6px 12px' : '9px 16px', borderRadius: '18px', cursor: 'pointer', backgroundColor: loggedSymptoms.includes(s) ? '#DB2777' : '#FDF2F8', color: loggedSymptoms.includes(s) ? '#FFFFFF' : '#DB2777', border: `1.5px solid ${loggedSymptoms.includes(s) ? '#DB2777' : '#FBCFE8'}` }}>{s}</span>
                 ))}
               </div>
               <button onClick={() => showToast(loggedSymptoms.length ? 'Symptoms logged for today.' : 'Select at least one symptom to log.', loggedSymptoms.length ? 'success' : 'error')} style={{ width: '100%', marginTop: '18px', backgroundColor: '#DB2777', color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '12px', fontSize: '13.5px', fontWeight: '800', cursor: 'pointer' }}>Save Today's Log</button>
@@ -2299,28 +2404,28 @@ export default function App() {
   };
 
   // ══════════════════════════════════════════════════════════════════════════
-  // EMERGENCY HELP FEATURE RENDERER
+  // EMERGENCY HELP FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderEmergencyFeature = () => (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5F5' }} className="no-scrollbar">
-      <div style={{ background: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)', padding: '20px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+      <div style={{ background: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)', padding: isMobile ? '16px 16px' : '20px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
         <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.22)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Icon name="alert" size={18} color="#FFFFFF" />
-            <h2 style={{ margin: 0, fontSize: '19px', fontWeight: '800', color: '#FFFFFF' }}>Emergency Help</h2>
+            <h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: '#FFFFFF' }}>Emergency Help</h2>
           </div>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>You are not alone. Help is here.</p>
+          <p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '11px' : '12.5px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>You are not alone. Help is here.</p>
         </div>
       </div>
 
-      <div style={{ padding: '20px 32px', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
         <div style={{ backgroundColor: '#FEE2E2', border: '1.5px solid #FCA5A5', borderRadius: '14px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
           <Icon name="alert" size={16} color="#DC2626" />
-          <span style={{ fontSize: '13px', fontWeight: '700', color: '#991B1B' }}>In a life-threatening emergency, always call 999 or 112 first.</span>
+          <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: '#991B1B' }}>In a life-threatening emergency, always call 999 or 112 first.</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
           <a href="tel:999" style={{ textDecoration: 'none', backgroundColor: '#DC2626', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box' }}>
             <Icon name="phone" size={20} color="#FFFFFF" />
             <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#FFFFFF' }}>Call Now</span>
@@ -2373,18 +2478,18 @@ export default function App() {
   );
 
   // ══════════════════════════════════════════════════════════════════════════
-  // EXPLORE TOPICS FEATURE RENDERER
+  // EXPLORE TOPICS FEATURE RENDERER (responsive)
   // ══════════════════════════════════════════════════════════════════════════
   const renderTopicsFeature = () => {
     if (selectedTopic) {
       const t = selectedTopic;
       return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '20px 32px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
             <button onClick={() => setSelectedTopic(null)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
-            <h2 style={{ fontSize: '19px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>{t.label}</h2>
+            <h2 style={{ fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>{t.label}</h2>
           </div>
-          <div style={{ padding: '0 32px 32px 32px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
             <div style={{ borderRadius: '18px', background: t.gradient, padding: '28px 24px', color: '#FFFFFF', marginBottom: '18px' }}>
               <Icon name={t.icon} size={28} color="#FFFFFF" />
               <h3 style={{ margin: '10px 0 4px 0', fontSize: '19px', fontWeight: '800' }}>{t.label}</h3>
@@ -2399,14 +2504,14 @@ export default function App() {
     }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
-        <div style={{ padding: '20px 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>Explore Topics</h2>
-            <p style={{ fontSize: '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' }}>Learn · Grow · Be informed</p>
+            <h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>Explore Topics</h2>
+            <p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' }}>Learn · Grow · Be informed</p>
           </div>
         </div>
-        <div style={{ padding: '0 32px 32px 32px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '18px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' }}>
           {exploreTopics.map(t => (
             <div key={t.id} onClick={() => setSelectedTopic(t)} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
               <div style={{ background: t.gradient, padding: '22px 20px', position: 'relative', minHeight: '70px', display: 'flex', alignItems: 'flex-start', boxSizing: 'border-box' }}>
@@ -2439,7 +2544,7 @@ export default function App() {
             </nav>
           ) : (
             <>
-              <BrandLogo onClick={() => setCurrentView('landing')} />
+              <BrandLogo onClick={() => setCurrentView('landing')} isMobile={isMobile} />
               <nav>
                 <span style={styles.navLinkItem} onClick={() => setCurrentView('landing')}>Home</span>
                 <span style={styles.navLinkItem} onClick={() => setCurrentView('about')}>About</span>
@@ -2615,7 +2720,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* ── Dashboard feature cards — now fully admin-editable ── */}
+              {/* ── Dashboard feature cards ── */}
               <div style={styles.featuresGridContainer}>
                 {dashboardCards.map(card => (
                   <div
@@ -2685,6 +2790,7 @@ export default function App() {
       <style>{`
         .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        body { margin: 0; overflow: hidden; }
       `}</style>
 
       {/* Toast */}
