@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import bgImage from './IMAGE.PNG';
+import bgImage from './IMAGE.png';
 import signBgImage from './SIGN.jpg';
 
 // ── Custom hook for window size ─────────────────────────────────────────────
