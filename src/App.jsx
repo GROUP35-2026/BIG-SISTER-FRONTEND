@@ -788,7 +788,12 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authToken, setAuthToken]     = useState(null);
 
-  const BACKEND_URL = 'http://localhost:5000';
+  // ── FIX #1: Backend URL now reads from an environment variable so it works
+  // in production (Vercel) as well as locally. Set REACT_APP_BACKEND_URL in
+  // your Vercel project settings to your deployed backend's public URL.
+  // (If using Vite instead of Create React App, use import.meta.env.VITE_BACKEND_URL
+  // and name the env var VITE_BACKEND_URL instead.)
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
   // ── Admin-editable dashboard cards (fetched from backend) ────────────────
   const [dashboardCards, setDashboardCards] = useState(DEFAULT_DASHBOARD_CARDS);
@@ -1336,6 +1341,8 @@ export default function App() {
   // ══════════════════════════════════════════════════════════════════════════
   // STYLES (fully responsive)
   // ══════════════════════════════════════════════════════════════════════════
+  const isSmallPhone = width < 380;
+
   const styles = {
     container: { 
       position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
@@ -1348,12 +1355,12 @@ export default function App() {
     mainColumn:  { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
     sidebar: { 
-      width: isMobile ? '64px' : '256px', 
-      minWidth: isMobile ? '64px' : '256px', 
+      width: isMobile ? '56px' : '256px', 
+      minWidth: isMobile ? '56px' : '256px', 
       height: '100%', backgroundColor: '#FFFFFF', borderRight: '1px solid #F0E4F7', 
       display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto' 
     },
-    sidebarNavScroll:    { flex: 1, padding: isMobile ? '4px 0' : '4px 14px 10px 14px', boxSizing: 'border-box' },
+    sidebarNavScroll:    { flex: 1, padding: isMobile ? '4px 4px' : '4px 14px 10px 14px', boxSizing: 'border-box' },
     sidebarSectionLabel: { fontSize: '10.5px', fontWeight: '800', color: '#B98FD1', textTransform: 'uppercase', letterSpacing: '1px', margin: isMobile ? '12px 0 6px 0' : '18px 10px 8px 10px', textAlign: isMobile ? 'center' : 'left' },
     sidebarNavItem:      { 
       display: 'flex', alignItems: 'center', gap: '11px', padding: isMobile ? '10px 0' : '9px 12px', 
@@ -1370,49 +1377,55 @@ export default function App() {
     sidebarBottomDesc:   { fontSize: '11px', color: '#B36FA0', margin: '2px 0 0 0', fontWeight: '500', lineHeight: '1.35' },
 
     navbar: { 
-      width: '100%', height: '64px', backgroundColor: '#FFFFFF', padding: isMobile ? '0 16px' : '0 40px', 
+      width: '100%', height: isMobile ? '56px' : '64px', backgroundColor: '#FFFFFF', padding: isMobile ? '0 12px' : '0 40px', 
       display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', 
       borderBottom: '1px solid #EAEAEA', zIndex: 50, flexShrink: 0 
     },
-    navBrandGroup:   { display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '30px' },
+    navBrandGroup:   { display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '30px', minWidth: 0 },
     navBrandText:    { fontSize: '24px', fontWeight: '800', color: themeColors.magenta, cursor: 'pointer' },
-    navLinkItem:     { fontSize: isMobile ? '12px' : '14px', fontWeight: '600', color: '#A155B9', textDecoration: 'none', cursor: 'pointer', marginRight: isMobile ? '10px' : '20px' },
-    navAuthButtons:  { display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '12px' },
-    navLoginBtn:     { background: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '20px', padding: isMobile ? '4px 12px' : '6px 20px', fontSize: isMobile ? '11px' : '14px', fontWeight: '600', cursor: 'pointer' },
-    navRegisterBtn:  { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: isMobile ? '5px 14px' : '7px 22px', fontSize: isMobile ? '11px' : '14px', fontWeight: '600', cursor: 'pointer' },
-    userProfileTag:  { fontSize: isMobile ? '11px' : '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '4px' },
+    navLinkItem:     { fontSize: isMobile ? '11px' : '14px', fontWeight: '600', color: '#A155B9', textDecoration: 'none', cursor: 'pointer', marginRight: isMobile ? '8px' : '20px', whiteSpace: 'nowrap' },
+    navAuthButtons:  { display: 'flex', alignItems: 'center', gap: isMobile ? '5px' : '12px', flexShrink: 0 },
+    navLoginBtn:     { background: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '20px', padding: isMobile ? '4px 10px' : '6px 20px', fontSize: isMobile ? '10.5px' : '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' },
+    navRegisterBtn:  { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '20px', padding: isMobile ? '5px 12px' : '7px 22px', fontSize: isMobile ? '10.5px' : '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' },
+    userProfileTag:  { fontSize: isMobile ? '10.5px' : '13px', fontWeight: '600', color: themeColors.textDark, marginRight: '4px', display: isSmallPhone ? 'none' : 'inline' },
     contentBody:     { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, width: '100%', boxSizing: 'border-box', overflow: 'hidden' },
 
     // ── LANDING PAGE (fully responsive) ──────────────────────────────────
-    landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF', overflow: 'hidden' },
+    landingMainContainer: { display: 'flex', flexDirection: 'column', height: '100%', width: '100%', backgroundColor: '#FFFFFF', overflowY: isMobile ? 'auto' : 'hidden', overflowX: 'hidden' },
+    // FIX #2: mobile hero now uses a top-to-bottom scrim (instead of the desktop
+    // left-to-right one) so the heading sits on a solid light background instead
+    // of directly on the photo. Also taller min-height and repositioned focal point.
     landingHeroSection: { 
-      display: 'flex', width: '100%', flex: '1.2', 
-      backgroundImage: `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 22%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.25) 62%, rgba(0,0,0,0.1) 100%), url(${bgImage})`, 
-      backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', 
-      alignItems: 'center', justifyContent: 'flex-start', 
-      padding: isMobile ? '20px 16px' : '20px 60px', 
+      display: 'flex', width: '100%', flex: isMobile ? 'none' : '1.2', 
+      minHeight: isMobile ? '460px' : undefined,
+      backgroundImage: isMobile
+        ? `linear-gradient(to bottom, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.92) 34%, rgba(255,255,255,0.6) 56%, rgba(0,0,0,0.18) 100%), url(${bgImage})`
+        : `linear-gradient(to right, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 22%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.25) 62%, rgba(0,0,0,0.1) 100%), url(${bgImage})`, 
+      backgroundSize: 'cover', backgroundPosition: isMobile ? 'center 15%' : 'center', backgroundRepeat: 'no-repeat', 
+      alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'flex-start', 
+      padding: isMobile ? '24px 18px' : '20px 60px', 
       boxSizing: 'border-box', position: 'relative' 
     },
     landingHeroLeft: { width: '100%', maxWidth: '550px', textAlign: 'left', zIndex: 2 },
     landingHeroTag: { 
-      fontSize: isMobile ? '9px' : '11px', 
+      fontSize: isMobile ? '9.5px' : '11px', 
       fontWeight: '800', color: themeColors.magenta, 
       textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' 
     },
     landingHeroTitle: { 
-      fontSize: isMobile ? '22px' : '38px', 
-      fontWeight: '800', color: themeColors.textDark, lineHeight: '1.15', 
+      fontSize: isMobile ? '26px' : '38px', 
+      fontWeight: '800', color: themeColors.textDark, lineHeight: '1.2', 
       margin: '0 0 12px 0' 
     },
     landingHeroDesc: { 
-      fontSize: isMobile ? '12px' : '14.5px', 
-      color: '#1A1A1A', lineHeight: '1.65', marginBottom: '20px', 
-      fontWeight: '600', textAlign: 'justify', 
-      textShadow: '0 1px 4px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.6)' 
+      fontSize: isMobile ? '13px' : '14.5px', 
+      color: '#1A1A1A', lineHeight: '1.6', marginBottom: '20px', 
+      fontWeight: '600', textAlign: isMobile ? 'left' : 'justify', 
+      textShadow: '0 1px 4px rgba(255,255,255,0.95), 0 0 14px rgba(255,255,255,0.75)' 
     },
     landingHeroBtnGroup: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
     landingGridSection: { 
-      padding: isMobile ? '16px 16px' : '20px 60px', flex: '0.8', 
+      padding: isMobile ? '20px 16px' : '20px 60px', flex: isMobile ? 'none' : '0.8', 
       display: 'flex', flexDirection: isMobile ? 'column' : 'row', 
       gap: '16px', justifyContent: 'center', alignItems: 'center', 
       boxSizing: 'border-box', backgroundColor: '#FDF8FF', borderTop: '1px solid #F5E6FA' 
@@ -1420,17 +1433,18 @@ export default function App() {
     landingInfoCard: { 
       backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '18px', 
       flex: '1', height: 'auto', minWidth: '0', maxWidth: isMobile ? '100%' : '360px', 
+      width: isMobile ? '100%' : undefined,
       boxSizing: 'border-box', border: '1px solid #EFE0F5', textAlign: 'left', 
       display: 'flex', flexDirection: 'column', justifyContent: 'center', 
       boxShadow: '0 4px 12px rgba(0,0,0,0.02)' 
     },
     landingCardIcon: { marginBottom: '10px', display: 'flex' },
     landingCardTitle: { fontSize: '15px', fontWeight: '700', color: themeColors.textDark, marginBottom: '6px' },
-    landingCardDesc: { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0, textAlign: 'justify' },
+    landingCardDesc: { fontSize: '12.5px', color: themeColors.textMuted, lineHeight: '1.5', margin: 0, textAlign: isMobile ? 'left' : 'justify' },
 
-    authCardWrapper: { display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'center', padding: '20px 16px', boxSizing: 'border-box' },
-    authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: isMobile ? '100%' : '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: isMobile ? '20px' : '24px', textAlign: 'center', overflow: 'hidden' },
-    authCardTitle:   { fontSize: isMobile ? '18px' : '20px', fontWeight: '700', color: themeColors.textDark, margin: '0 0 16px 0', letterSpacing: '-0.3px' },
+    authCardWrapper: { display: 'flex', flex: 1, backgroundImage: `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url(${signBgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '16px 14px' : '20px 16px', boxSizing: 'border-box', overflowY: 'auto' },
+    authMainCard:    { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: isMobile ? '100%' : '375px', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', boxSizing: 'border-box', padding: isMobile ? '22px 18px' : '24px', textAlign: 'center', overflow: 'hidden' },
+    authCardTitle:   { fontSize: isMobile ? '17px' : '20px', fontWeight: '700', color: themeColors.textDark, margin: '0 0 16px 0', letterSpacing: '-0.3px' },
     authSubmitBtn:   { background: themeColors.gradientBg, color: '#FFFFFF', border: 'none', borderRadius: '25px', padding: '11px 24px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', width: '100%', marginTop: '6px', marginBottom: '10px' },
     inputGroup:      { marginBottom: '10px', textAlign: 'left', position: 'relative' },
     inputLabel:      { display: 'block', fontSize: '11px', fontWeight: '700', color: '#A0A0A0', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -1439,18 +1453,18 @@ export default function App() {
 
     // ── DASHBOARD ─────────────────────────────────────────────────────────
     dashboardWrapper:      { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
-    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: isMobile ? '10px 16px' : '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
+    dashboardWelcomeBar:   { width: '100%', backgroundColor: '#C51FA0', padding: isMobile ? '10px 14px' : '10px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', color: '#FFFFFF', flexShrink: 0 },
     dashboardWelcomeText:  { fontSize: isMobile ? '13px' : '16px', fontWeight: '700', letterSpacing: '-0.2px' },
     dashboardMainView:     { padding: isMobile ? '12px 12px' : '16px 32px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', width: '100%', flex: 1, minHeight: 0 },
-    tipOfTheDayCard:       { width: '100%', backgroundColor: '#FA539B', borderRadius: '14px', padding: '10px 18px', color: '#FFFFFF', boxSizing: 'border-box', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(250,83,155,0.15)', flexShrink: 0 },
+    tipOfTheDayCard:       { width: '100%', backgroundColor: '#FA539B', borderRadius: '14px', padding: isMobile ? '10px 14px' : '10px 18px', color: '#FFFFFF', boxSizing: 'border-box', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 15px rgba(250,83,155,0.15)', flexShrink: 0 },
     tipTitle:              { fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', opacity: 0.9, marginBottom: '2px' },
     tipBody:               { fontSize: '13px', fontWeight: '500', margin: 0, lineHeight: '1.3' },
     featuresGridContainer: { 
       display: 'grid', 
-      gridTemplateColumns: isMobile ? (width < 480 ? '1fr 1fr' : '1fr 1fr') : 'repeat(4, 1fr)', 
-      gap: '12px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 
+      gridTemplateColumns: isSmallPhone ? '1fr 1fr' : isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', 
+      gap: isMobile ? '10px' : '12px', width: '100%', boxSizing: 'border-box', paddingBottom: '14px', flexShrink: 0 
     },
-    featureCard:  { borderRadius: '14px', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: isMobile ? '90px' : '110px' },
+    featureCard:  { borderRadius: '14px', padding: isMobile ? '12px' : '14px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', boxSizing: 'border-box', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', minHeight: isMobile ? '86px' : '110px' },
     featureIcon:  { marginBottom: '8px', display: 'flex' },
     featureTitle: { fontSize: isMobile ? '12px' : '14px', fontWeight: '700', marginBottom: '4px' },
     featureDesc:  { fontSize: isMobile ? '10px' : '11.5px', lineHeight: '1.35', margin: 0, fontWeight: '500' },
@@ -1463,19 +1477,19 @@ export default function App() {
 
     // ── COUNSELLOR ────────────────────────────────────────────────────────
     counsellorWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FBF2FC' },
-    counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
+    counsellorHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
     counsellorBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
     counsellorHeaderTitle:    { fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: themeColors.purple, margin: 0 },
     counsellorHeaderSubtitle: { fontSize: isMobile ? '11px' : '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' },
     mySessionsLink:           { marginLeft: 'auto', fontSize: isMobile ? '11px' : '13px', fontWeight: '700', color: themeColors.purple, cursor: 'pointer', backgroundColor: '#F3E8FF', padding: isMobile ? '6px 12px' : '8px 16px', borderRadius: '18px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' },
-    counsellorListBody:       { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
-    counsellorCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
+    counsellorListBody:       { padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
+    counsellorCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '14px' : '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
     counsellorCardTopRow:     { display: 'flex', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap' },
     counsellorAvatarCircle:   { width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     counsellorInfoBlock:      { flex: 1, minWidth: 0 },
     counsellorName:           { fontSize: '15.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
     counsellorRole:           { fontSize: '12.5px', color: '#888888', margin: '2px 0 8px 0', fontWeight: '600' },
-    counsellorBio:            { fontSize: '12.5px', color: '#555555', lineHeight: '1.45', margin: '0 0 10px 0', textAlign: 'justify' },
+    counsellorBio:            { fontSize: '12.5px', color: '#555555', lineHeight: '1.45', margin: '0 0 10px 0', textAlign: isMobile ? 'left' : 'justify' },
     counsellorTagsRow:        { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' },
     counsellorTag:            { fontSize: '11.5px', fontWeight: '700', color: themeColors.purple, backgroundColor: '#F3E8FF', padding: '4px 10px', borderRadius: '12px' },
     availabilityBadgeAvailable: { fontSize: '11.5px', fontWeight: '700', color: '#16A34A', backgroundColor: '#DCFCE7', padding: '5px 12px', borderRadius: '14px', whiteSpace: 'nowrap', flexShrink: 0 },
@@ -1483,23 +1497,23 @@ export default function App() {
     counsellorActionRow:    { display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px' },
     chatNowBtn:             { flex: 1, backgroundColor: themeColors.purple, color: '#FFFFFF', border: 'none', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     bookSessionBtn:         { flex: 1, backgroundColor: '#FFFFFF', color: themeColors.purple, border: `1.5px solid ${themeColors.purple}`, borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
-    groupSessionCard:       { background: 'linear-gradient(135deg, #C026D3 0%, #9023F0 100%)', borderRadius: '18px', padding: '20px', color: '#FFFFFF', boxSizing: 'border-box' },
+    groupSessionCard:       { background: 'linear-gradient(135deg, #C026D3 0%, #9023F0 100%)', borderRadius: '18px', padding: isMobile ? '16px' : '20px', color: '#FFFFFF', boxSizing: 'border-box' },
     groupSessionTitleRow:   { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', fontSize: '15px', fontWeight: '800' },
-    groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0', textAlign: 'justify' },
+    groupSessionDesc:       { fontSize: '12.5px', opacity: 0.92, lineHeight: '1.4', margin: '0 0 16px 0', textAlign: isMobile ? 'left' : 'justify' },
     joinGroupBtn:           { width: '100%', backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: '22px', padding: '11px 16px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer' },
 
     chatBody:           { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '20px 16px' : '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
-    chatAvatarLarge:    { width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
+    chatAvatarLarge:    { width: isMobile ? '76px' : '90px', height: isMobile ? '76px' : '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '18px', boxShadow: '0 6px 18px rgba(0,0,0,0.08)' },
     chatCounsellorName: { fontSize: '17px', fontWeight: '800', color: themeColors.purple, margin: '0 0 2px 0' },
     chatCounsellorRole: { fontSize: '13px', color: '#A56BC4', margin: '0 0 24px 0', fontWeight: '600' },
-    chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px', textAlign: 'justify' },
+    chatSystemBubble:   { backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px 22px', maxWidth: '420px', fontSize: '13.5px', color: '#444444', lineHeight: '1.5', boxShadow: '0 4px 14px rgba(0,0,0,0.05)', marginBottom: '24px', textAlign: isMobile ? 'left' : 'justify' },
 
-    bookingBody:             { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
-    bookingCounsellorBanner: { borderRadius: '18px', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', color: '#FFFFFF' },
+    bookingBody:             { padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' },
+    bookingCounsellorBanner: { borderRadius: '18px', padding: isMobile ? '16px 18px' : '18px 20px', display: 'flex', alignItems: 'center', gap: '14px', color: '#FFFFFF' },
     bookingAvatarCircle:     { width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-    bookingPanel:            { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
+    bookingPanel:            { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' },
     bookingPanelLabel:       { fontSize: '13px', fontWeight: '700', color: themeColors.textDark, marginBottom: '12px' },
-    timeSlotGrid:            { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '10px' },
+    timeSlotGrid:            { display: 'grid', gridTemplateColumns: isSmallPhone ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(90px, 1fr))', gap: '10px' },
     timeSlotBtn:             { padding: '12px 10px', borderRadius: '14px', border: '1.5px solid #EAEAEA', backgroundColor: '#FAFAFA', fontSize: '13px', fontWeight: '700', color: '#555555', cursor: 'pointer', textAlign: 'center' },
     timeSlotBtnSelected:     { backgroundColor: themeColors.purple, borderColor: themeColors.purple, color: '#FFFFFF' },
     noteTextarea:            { width: '100%', minHeight: '70px', borderRadius: '14px', border: 'none', backgroundColor: '#F4F5F7', padding: '14px', fontSize: '13px', color: '#333333', boxSizing: 'border-box', outline: 'none', resize: 'vertical', fontFamily: 'inherit' },
@@ -1510,8 +1524,8 @@ export default function App() {
     toggleSwitchKnob:  (on) => ({ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#FFFFFF', position: 'absolute', top: '3px', left: on ? '21px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }),
     confirmBookingBtn: (ok) => ({ width: '100%', backgroundColor: ok ? themeColors.purple : '#EADCF5', color: ok ? '#FFFFFF' : '#B89DC9', border: 'none', borderRadius: '24px', padding: '14px', fontSize: '14.5px', fontWeight: '800', cursor: ok ? 'pointer' : 'not-allowed' }),
 
-    confirmationBody:         { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
-    confirmationCard:         { backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '40px 32px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box' },
+    confirmationBody:         { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '30px 16px' : '40px 32px', boxSizing: 'border-box', textAlign: 'center' },
+    confirmationCard:         { backgroundColor: '#FFFFFF', borderRadius: '20px', padding: isMobile ? '32px 22px' : '40px 32px', maxWidth: '420px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.08)', boxSizing: 'border-box' },
     confirmationCheckCircle:  { width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' },
     confirmationTitle:        { fontSize: '21px', fontWeight: '800', color: themeColors.textDark, margin: '0 0 14px 0' },
     confirmationWithText:     { fontSize: '14px', color: '#555555', margin: '0 0 4px 0', fontWeight: '600' },
@@ -1519,19 +1533,19 @@ export default function App() {
     confirmationReminderText: { fontSize: '12.5px', color: '#999999', margin: '0 0 26px 0' },
     backToCounsellorsBtn:     { width: '100%', backgroundColor: themeColors.purple, color: '#FFFFFF', border: 'none', borderRadius: '24px', padding: '13px', fontSize: '14px', fontWeight: '800', cursor: 'pointer' },
 
-    mySessionsEmptyState: { textAlign: 'center', padding: '60px 32px', color: '#999999' },
-    sessionCard:          { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' },
+    mySessionsEmptyState: { textAlign: 'center', padding: '60px 24px', color: '#999999' },
+    sessionCard:          { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' },
     sessionCardTopRow:    { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
     sessionCardAvatar:    { width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     sessionCardName:      { fontSize: '14.5px', fontWeight: '800', color: themeColors.textDark, margin: 0 },
     sessionCardRole:      { fontSize: '12px', color: '#888888', margin: '1px 0 0 0', fontWeight: '600' },
     sessionTimeBadge:     { marginLeft: 'auto', fontSize: '12px', fontWeight: '700', color: themeColors.purple, backgroundColor: '#F3E8FF', padding: '6px 12px', borderRadius: '14px', whiteSpace: 'nowrap' },
-    sessionNoteText:      { fontSize: '12.5px', color: '#666666', backgroundColor: '#FAFAFA', padding: '10px 12px', borderRadius: '10px', margin: 0, lineHeight: '1.4', textAlign: 'justify' },
+    sessionNoteText:      { fontSize: '12.5px', color: '#666666', backgroundColor: '#FAFAFA', padding: '10px 12px', borderRadius: '10px', margin: 0, lineHeight: '1.4', textAlign: isMobile ? 'left' : 'justify' },
     sessionAnonTag:       { fontSize: '11px', fontWeight: '700', color: '#888888', backgroundColor: '#F1F1F1', padding: '3px 9px', borderRadius: '10px', alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '4px' },
     sessionActionRow:     { display: 'flex', gap: '10px' },
     sessionEditBtn:       { flex: 1, backgroundColor: '#F3E8FF', color: themeColors.purple, border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
     sessionDeleteBtn:     { flex: 1, backgroundColor: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: '18px', padding: '9px 14px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
-    deleteConfirmRow:     { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', backgroundColor: '#FEF2F2', borderRadius: '14px', padding: '12px 14px' },
+    deleteConfirmRow:     { display: 'flex', flexDirection: isSmallPhone ? 'column' : 'row', alignItems: isSmallPhone ? 'stretch' : 'center', justifyContent: 'space-between', gap: '10px', backgroundColor: '#FEF2F2', borderRadius: '14px', padding: '12px 14px' },
     deleteConfirmText:    { fontSize: '12px', color: '#991B1B', fontWeight: '600', margin: 0 },
     deleteConfirmActions: { display: 'flex', gap: '8px', flexShrink: 0 },
     deleteConfirmYesBtn:  { backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', borderRadius: '12px', padding: '7px 12px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer' },
@@ -1539,12 +1553,12 @@ export default function App() {
 
     // ── SUPPORT ────────────────────────────────────────────────────────────
     supportWrapper:        { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#EEF2FF' },
-    supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
+    supportHeaderBar:      { display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box', flexWrap: 'wrap' },
     supportBackBtn:        { width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#3B82F6', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 },
     supportHeaderTitle:    { fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: '#3B82F6', margin: 0 },
     supportHeaderSubtitle: { fontSize: isMobile ? '11px' : '12.5px', color: '#6366F1', margin: 0, fontWeight: '500' },
-    supportListBody:       { padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' },
-    supportCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px', transition: 'transform 0.15s, box-shadow 0.15s' },
+    supportListBody:       { padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' },
+    supportCard:           { backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '18px' : '22px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px', transition: 'transform 0.15s, box-shadow 0.15s' },
     supportCardIcon:       { width: '48px', height: '48px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     supportCardTitle:      { fontSize: '15px', fontWeight: '800', color: '#1A1A1A', margin: 0 },
     supportCardSubtitle:   { fontSize: '12px', color: '#888888', margin: 0, fontWeight: '500' },
@@ -1618,13 +1632,6 @@ export default function App() {
     </aside>
   );
 
-  // ── Support, Counsellor, Profile, AI, Skills, Track, Emergency, Topics renderers ──
-  // (These are the same as before but use the responsive styles object above)
-  // For brevity, they are included in the final code; I'll include them fully.
-  // Since we are providing the full code, we need to include all render functions.
-  // I'll now include them inline (they were already defined in the previous version).
-  // For this answer, I'll include them as they were but using the styles object.
-
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER FUNCTIONS (using styles)
   // ══════════════════════════════════════════════════════════════════════════
@@ -1665,13 +1672,13 @@ export default function App() {
           </div>
         )}
         {supportView === 'detail' && cat && (
-          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
-            <div style={{ borderRadius: '18px', background: cat.gradient, padding: '28px 24px', color: '#FFFFFF' }}>
+          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '18px', boxSizing: 'border-box' }}>
+            <div style={{ borderRadius: '18px', background: cat.gradient, padding: isMobile ? '22px 20px' : '28px 24px', color: '#FFFFFF' }}>
               <div style={{ marginBottom: '10px' }}><Icon name={cat.icon} size={30} color="#FFFFFF" /></div>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '800' }}>{cat.label}</h3>
               <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{cat.subtitle}</p>
             </div>
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13px', fontWeight: '800', color: cat.color }}>What's included:</p>
               {cat.includes.map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < cat.includes.length - 1 ? '10px' : 0 }}>
@@ -1686,7 +1693,7 @@ export default function App() {
               <p style={{ margin: '0 0 4px 0', fontSize: '11px', fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Eligibility</p>
               <p style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#1A1A1A' }}>{cat.eligibility}</p>
             </div>
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Request this support:</p>
               <input type="text" placeholder="Your first name" value={supportFirstName} onChange={e => setSupportFirstName(e.target.value)} style={{ ...styles.inputField, marginBottom: '10px', display: 'block' }} />
               <input type="text" placeholder="Your school name" value={supportSchoolName} onChange={e => setSupportSchoolName(e.target.value)} style={{ ...styles.inputField, marginBottom: '16px', display: 'block' }} />
@@ -1701,9 +1708,9 @@ export default function App() {
           </div>
         )}
         {supportView === 'myrequests' && (
-          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'flex', flexDirection: 'column', gap: '14px', boxSizing: 'border-box' }}>
             {supportRequests.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 32px', color: '#999999' }}>
+              <div style={{ textAlign: 'center', padding: '60px 24px', color: '#999999' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}><Icon name="clipboard" size={30} color="#999999" /></div>
                 <p style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>No requests submitted yet</p>
                 <p style={{ fontSize: '12.5px', marginTop: '6px' }}>Submit a support request to see it here.</p>
@@ -1712,7 +1719,7 @@ export default function App() {
               supportRequests.map(req => {
                 const catInfo = supportCategories.find(c => c.id === req.category) || supportCategories[0];
                 return (
-                  <div key={req.id} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div key={req.id} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '18px 20px', boxSizing: 'border-box', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: `${catInfo.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={catInfo.icon} size={18} color={catInfo.color} /></div>
                       <div style={{ flex: 1 }}>
@@ -1916,7 +1923,7 @@ export default function App() {
         </div>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: isMobile ? '16px 16px 40px 16px' : '28px 40px 60px 40px', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', alignItems: 'start' }}>
-            <div style={{ ...cardStyle, padding: '28px 22px', width: isMobile ? '100%' : '280px' }}>
+            <div style={{ ...cardStyle, padding: isMobile ? '22px 18px' : '28px 22px', width: isMobile ? '100%' : '280px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '20px' }}>
                 <div style={{ position: 'relative', marginBottom: '14px' }}>
                   <div style={{
@@ -2057,28 +2064,28 @@ export default function App() {
   // ── AI BOT ──────────────────────────────────────────────────────────────
   const renderAIBotFeature = () => (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden', boxSizing: 'border-box', backgroundColor: '#F0FDFA' }}>
-      <div style={{ background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)', padding: isMobile ? '14px 16px' : '18px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+      <div style={{ background: 'linear-gradient(135deg, #0D9488 0%, #14B8A6 100%)', padding: isMobile ? '12px 14px' : '18px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
         <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="sparkle" size={17} color="#FFFFFF" /><h2 style={{ margin: 0, fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#FFFFFF' }}>AI Health Bot</h2></div>
-          <p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '11px' : '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Always available · Always private</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="sparkle" size={17} color="#FFFFFF" /><h2 style={{ margin: 0, fontSize: isMobile ? '15px' : '18px', fontWeight: '800', color: '#FFFFFF' }}>AI Health Bot</h2></div>
+          <p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '10.5px' : '12px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>Always available · Always private</p>
         </div>
-        <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#0D9488" /> Private</span>
+        <span style={{ fontSize: isMobile ? '10.5px' : '11.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', padding: isMobile ? '4px 10px' : '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#0D9488" /> Private</span>
       </div>
-      <div style={{ padding: isMobile ? '12px 16px 0 16px' : '16px 32px 0 32px', display: 'flex', gap: '10px', flexWrap: 'wrap', flexShrink: 0, boxSizing: 'border-box' }}>
-        {aiBotQuickQuestions.map(item => <span key={item.q} onClick={() => handleAiBotSend(item.q)} style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', border: '1.5px solid #99F6E4', borderRadius: '18px', padding: isMobile ? '6px 12px' : '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>{item.q}</span>)}
+      <div style={{ padding: isMobile ? '10px 14px 0 14px' : '16px 32px 0 32px', display: 'flex', gap: '10px', overflowX: isMobile ? 'auto' : 'visible', flexWrap: isMobile ? 'nowrap' : 'wrap', flexShrink: 0, boxSizing: 'border-box' }} className="no-scrollbar">
+        {aiBotQuickQuestions.map(item => <span key={item.q} onClick={() => handleAiBotSend(item.q)} style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '700', color: '#0D9488', backgroundColor: '#FFFFFF', border: '1.5px solid #99F6E4', borderRadius: '18px', padding: isMobile ? '6px 12px' : '8px 16px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{item.q}</span>)}
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px' : '20px 32px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }} className="no-scrollbar">
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 14px' : '20px 32px', display: 'flex', flexDirection: 'column', gap: '12px', boxSizing: 'border-box' }} className="no-scrollbar">
         {aiBotMessages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', flexDirection: msg.from === 'user' ? 'row-reverse' : 'row' }}>
             {msg.from === 'bot' && <div style={{ width: '30px', height: '30px', borderRadius: '50%', backgroundColor: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="sparkle" size={14} color="#FFFFFF" /></div>}
-            <div style={{ maxWidth: '80%', backgroundColor: msg.from === 'user' ? '#0D9488' : '#FFFFFF', color: msg.from === 'user' ? '#FFFFFF' : '#333333', borderRadius: '16px', padding: '12px 16px', fontSize: isMobile ? '13px' : '13.5px', lineHeight: '1.5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textAlign: 'justify' }}>{msg.text}</div>
+            <div style={{ maxWidth: '80%', backgroundColor: msg.from === 'user' ? '#0D9488' : '#FFFFFF', color: msg.from === 'user' ? '#FFFFFF' : '#333333', borderRadius: '16px', padding: '12px 16px', fontSize: isMobile ? '13px' : '13.5px', lineHeight: '1.5', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', textAlign: isMobile ? 'left' : 'justify' }}>{msg.text}</div>
           </div>
         ))}
       </div>
-      <div style={{ padding: isMobile ? '12px 16px' : '14px 32px', flexShrink: 0, backgroundColor: '#F0FDFA', borderTop: '1px solid #CCFBF1', boxSizing: 'border-box' }}>
+      <div style={{ padding: isMobile ? '10px 14px' : '14px 32px', flexShrink: 0, backgroundColor: '#F0FDFA', borderTop: '1px solid #CCFBF1', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <input type="text" placeholder="Ask your health question..." value={aiBotInput} onChange={e => setAiBotInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiBotSend(); }} style={{ flex: 1, padding: '12px 18px', borderRadius: '24px', border: '1.5px solid #99F6E4', backgroundColor: '#FFFFFF', fontSize: '13px', color: '#333333', outline: 'none', boxSizing: 'border-box' }} />
+          <input type="text" placeholder="Ask your health question..." value={aiBotInput} onChange={e => setAiBotInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleAiBotSend(); }} style={{ flex: 1, padding: '12px 18px', borderRadius: '24px', border: '1.5px solid #99F6E4', backgroundColor: '#FFFFFF', fontSize: '13px', color: '#333333', outline: 'none', boxSizing: 'border-box', minWidth: 0 }} />
           <button onClick={() => handleAiBotSend()} style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: '#0D9488', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}><Icon name="send" size={17} color="#FFFFFF" /></button>
         </div>
         <p style={{ textAlign: 'center', fontSize: '11px', color: '#0D9488', fontWeight: '600', margin: '10px 0 0 0' }}>Not a replacement for professional medical advice</p>
@@ -2095,12 +2102,12 @@ export default function App() {
       const isCompleted = c.completed || c.percentComplete >= 100;
       return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box' }}>
             <button onClick={() => { setSkillsView('list'); setSelectedCourse(null); }} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: c.color, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={c.color} /></button>
-            <h2 style={{ fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: c.color, margin: 0 }}>{c.title}</h2>
+            <h2 style={{ fontSize: isMobile ? '16px' : '19px', fontWeight: '800', color: c.color, margin: 0 }}>{c.title}</h2>
           </div>
-          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
-            <div style={{ borderRadius: '18px', backgroundColor: c.color, backgroundImage: 'radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 60%)', padding: '26px 24px', color: '#FFFFFF', marginBottom: '18px', boxSizing: 'border-box' }}>
+          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
+            <div style={{ borderRadius: '18px', backgroundColor: c.color, backgroundImage: 'radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 60%)', padding: isMobile ? '22px 20px' : '26px 24px', color: '#FFFFFF', marginBottom: '18px', boxSizing: 'border-box' }}>
               <div style={{ fontSize: '34px', marginBottom: '10px', lineHeight: 1 }}>{c.icon}</div>
               <h3 style={{ margin: '0 0 6px 0', fontSize: isMobile ? '18px' : '21px', fontWeight: '800' }}>{c.title}</h3>
               <p style={{ margin: '0 0 14px 0', fontSize: '13px', opacity: 0.92, lineHeight: '1.5' }}>{c.description}</p>
@@ -2121,7 +2128,7 @@ export default function App() {
                 </div>
               </div>
             )}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '20px', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '18px' : '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '20px', boxSizing: 'border-box' }}>
               <p style={{ margin: '0 0 16px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>What you will learn:</p>
               {points.map((pt, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: i < points.length - 1 ? '14px' : 0 }}>
@@ -2138,14 +2145,14 @@ export default function App() {
     const continueCourse = courses.find(c => c.percentComplete > 0 && c.percentComplete < 100);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFFBEB' }} className="no-scrollbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#D97706', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#D97706" /></button>
-          <div><h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#D97706', margin: 0 }}>Learn Skills</h2><p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#B45309', margin: 0, fontWeight: '500' }}>Free courses · Earn certificates</p></div>
+          <div><h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: '#D97706', margin: 0 }}>Learn Skills</h2><p style={{ fontSize: isMobile ? '10.5px' : '12.5px', color: '#B45309', margin: 0, fontWeight: '500' }}>Free courses · Earn certificates</p></div>
         </div>
-        <div style={{ padding: isMobile ? '0 16px' : '0 32px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 14px' : '0 32px', boxSizing: 'border-box' }}>
           {coursesLoading && <div style={{ textAlign: 'center', padding: '50px 20px', color: '#B45309', fontSize: '13px', fontWeight: '600' }}>Loading courses…</div>}
           {!coursesLoading && continueCourse && (
-            <div style={{ background: `linear-gradient(135deg, ${continueCourse.color} 0%, ${continueCourse.color}CC 100%)`, borderRadius: '18px', padding: '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
+            <div style={{ background: `linear-gradient(135deg, ${continueCourse.color} 0%, ${continueCourse.color}CC 100%)`, borderRadius: '18px', padding: isMobile ? '16px 18px' : '18px 22px', marginBottom: '20px', color: '#FFFFFF', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', marginBottom: '10px', gap: '14px' }}>
                 <div><p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9 }}>Continue learning</p><p style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: '800' }}>{continueCourse.title}</p><p style={{ margin: '2px 0 0 0', fontSize: '12.5px', opacity: 0.9 }}>{continueCourse.percentComplete}% complete</p></div>
                 <button onClick={() => handleOpenCourse(continueCourse)} style={{ backgroundColor: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.6)', borderRadius: '20px', padding: '9px 20px', color: '#FFFFFF', fontWeight: '700', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Continue →</button>
@@ -2156,7 +2163,7 @@ export default function App() {
           {!coursesLoading && (
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               {courses.map(course => (
-                <div key={course.id} onClick={() => handleOpenCourse(course)} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
+                <div key={course.id} onClick={() => handleOpenCourse(course)} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: isMobile ? '16px' : '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer', boxSizing: 'border-box' }}>
                   <div style={{ width: '44px', height: '44px', borderRadius: '13px', backgroundColor: `${course.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', marginBottom: '12px' }}>{course.icon}</div>
                   <h4 style={{ margin: '0 0 4px 0', fontSize: '14.5px', fontWeight: '800', color: '#1A1A1A' }}>{course.title}</h4>
                   <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#888888', lineHeight: '1.4' }}>{course.description}</p>
@@ -2176,7 +2183,7 @@ export default function App() {
               <p style={{ fontSize: '12.5px', marginTop: '6px' }}>Check back soon for new skills courses.</p>
             </div>
           )}
-          <div style={{ backgroundColor: '#FEF3C7', borderRadius: '16px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ backgroundColor: '#FEF3C7', borderRadius: '16px', padding: isMobile ? '14px 16px' : '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
             <Icon name="badge" size={20} color="#D97706" />
             <div><p style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#92400E' }}>Earn a Certificate</p><p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#92400E', fontWeight: '500' }}>Complete any course to earn a recognised skills certificate you can use for jobs.</p></div>
           </div>
@@ -2201,35 +2208,35 @@ export default function App() {
     const toggleSymptom = (s) => setLoggedSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5FA' }} className="no-scrollbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#DB2777', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#DB2777" /></button>
-          <div style={{ flex: 1 }}><h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#DB2777', margin: 0 }}>Track Health</h2><p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#C0288E', margin: 0, fontWeight: '500' }}>Cycle & symptom tracker</p></div>
-          <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#DB2777', backgroundColor: '#FCE7F3', padding: '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#DB2777" /> Private</span>
+          <div style={{ flex: 1 }}><h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: '#DB2777', margin: 0 }}>Track Health</h2><p style={{ fontSize: isMobile ? '10.5px' : '12.5px', color: '#C0288E', margin: 0, fontWeight: '500' }}>Cycle & symptom tracker</p></div>
+          <span style={{ fontSize: isMobile ? '10.5px' : '11.5px', fontWeight: '700', color: '#DB2777', backgroundColor: '#FCE7F3', padding: isMobile ? '4px 10px' : '5px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}><Icon name="lock" size={11} color="#DB2777" /> Private</span>
         </div>
-        <div style={{ padding: isMobile ? '0 16px' : '0 32px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 14px' : '0 32px', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '16px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '18px', overflow: 'hidden' }}>
             {[{ label: 'Cycle Day', value: '17' }, { label: 'Next Period', value: '12 days' }, { label: 'Avg Cycle', value: '28d' }].map((s, i) => (
-              <div key={s.label} style={{ flex: 1, padding: isMobile ? '12px' : '16px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5E6F0' : 'none' }}>
-                <p style={{ margin: 0, fontSize: '11.5px', color: '#999999', fontWeight: '600' }}>{s.label}</p>
-                <p style={{ margin: '4px 0 0 0', fontSize: isMobile ? '18px' : '22px', color: '#DB2777', fontWeight: '800' }}>{s.value}</p>
+              <div key={s.label} style={{ flex: 1, padding: isMobile ? '10px 6px' : '16px', textAlign: 'center', borderRight: i < 2 ? '1px solid #F5E6F0' : 'none' }}>
+                <p style={{ margin: 0, fontSize: isMobile ? '10px' : '11.5px', color: '#999999', fontWeight: '600' }}>{s.label}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: isMobile ? '17px' : '22px', color: '#DB2777', fontWeight: '800' }}>{s.value}</p>
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', backgroundColor: '#FFFFFF', borderRadius: '20px', padding: '5px', marginBottom: '18px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
             {[{ key: 'calendar', label: 'Calendar' }, { key: 'symptoms', label: 'Symptoms' }, { key: 'insights', label: 'Insights' }].map(tab => (
-              <div key={tab.key} onClick={() => setTrackHealthTab(tab.key)} style={{ flex: 1, textAlign: 'center', padding: '10px', borderRadius: '16px', cursor: 'pointer', fontSize: isMobile ? '12px' : '13.5px', fontWeight: '700', backgroundColor: trackHealthTab === tab.key ? '#DB2777' : 'transparent', color: trackHealthTab === tab.key ? '#FFFFFF' : '#888888' }}>{tab.label}</div>
+              <div key={tab.key} onClick={() => setTrackHealthTab(tab.key)} style={{ flex: 1, textAlign: 'center', padding: '10px 4px', borderRadius: '16px', cursor: 'pointer', fontSize: isMobile ? '11.5px' : '13.5px', fontWeight: '700', backgroundColor: trackHealthTab === tab.key ? '#DB2777' : 'transparent', color: trackHealthTab === tab.key ? '#FFFFFF' : '#888888' }}>{tab.label}</div>
             ))}
           </div>
           {trackHealthTab === 'calendar' && (
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <span style={{ cursor: 'pointer', color: '#DB2777', display: 'flex' }}><Icon name="arrow-left" size={15} color="#DB2777" /></span>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#1A1A1A' }}>June 2026</h3>
                 <span style={{ cursor: 'pointer', color: '#DB2777', transform: 'rotate(180deg)', display: 'flex' }}><Icon name="arrow-left" size={15} color="#DB2777" /></span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', marginBottom: '8px' }}>{weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '11.5px', fontWeight: '700', color: '#DB2777' }}>{d}</div>)}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
-                {juneCalendarCells.map((day, i) => <div key={i} style={{ aspectRatio: '1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '12px' : '13px', ...getDayStyle(day) }}>{day || ''}</div>)}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? '4px' : '6px', marginBottom: '8px' }}>{weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: isMobile ? '10px' : '11.5px', fontWeight: '700', color: '#DB2777' }}>{d}</div>)}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? '4px' : '6px' }}>
+                {juneCalendarCells.map((day, i) => <div key={i} style={{ aspectRatio: '1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '11px' : '13px', ...getDayStyle(day) }}>{day || ''}</div>)}
               </div>
               <div style={{ display: 'flex', gap: '18px', marginTop: '18px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '11.5px', color: '#888888', display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#E61B9B', display: 'inline-block' }} /> Period</span>
@@ -2238,7 +2245,7 @@ export default function App() {
             </div>
           )}
           {trackHealthTab === 'symptoms' && (
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>How are you feeling today?</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                 {symptomsList.map(s => <span key={s} onClick={() => toggleSymptom(s)} style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '700', padding: isMobile ? '6px 12px' : '9px 16px', borderRadius: '18px', cursor: 'pointer', backgroundColor: loggedSymptoms.includes(s) ? '#DB2777' : '#FDF2F8', color: loggedSymptoms.includes(s) ? '#FFFFFF' : '#DB2777', border: `1.5px solid ${loggedSymptoms.includes(s) ? '#DB2777' : '#FBCFE8'}` }}>{s}</span>)}
@@ -2247,7 +2254,7 @@ export default function App() {
             </div>
           )}
           {trackHealthTab === 'insights' && (
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '16px' : '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', marginBottom: '24px', boxSizing: 'border-box' }}>
               <p style={{ margin: '0 0 14px 0', fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Your cycle insights</p>
               {[{ label: 'Cycle length has stayed consistent for 3 months', color: '#16A34A' }, { label: 'Cramps were logged most on Day 1–2', color: '#DB2777' }, { label: 'Mood dips are common 2 days before your period', color: '#9333EA' }].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: i < 2 ? '1px solid #F5F5F5' : 'none' }}>
@@ -2264,29 +2271,29 @@ export default function App() {
   // ── EMERGENCY ──────────────────────────────────────────────────────────
   const renderEmergencyFeature = () => (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FFF5F5' }} className="no-scrollbar">
-      <div style={{ background: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)', padding: isMobile ? '16px 16px' : '20px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
+      <div style={{ background: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)', padding: isMobile ? '14px 14px' : '20px 32px', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0, boxSizing: 'border-box' }}>
         <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.22)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#FFFFFF', flexShrink: 0 }}><Icon name="arrow-left" size={15} color="#FFFFFF" /></button>
-        <div><div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="alert" size={18} color="#FFFFFF" /><h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: '#FFFFFF' }}>Emergency Help</h2></div><p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '11px' : '12.5px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>You are not alone. Help is here.</p></div>
+        <div><div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Icon name="alert" size={18} color="#FFFFFF" /><h2 style={{ margin: 0, fontSize: isMobile ? '16px' : '19px', fontWeight: '800', color: '#FFFFFF' }}>Emergency Help</h2></div><p style={{ margin: '2px 0 0 0', fontSize: isMobile ? '10.5px' : '12.5px', color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>You are not alone. Help is here.</p></div>
       </div>
-      <div style={{ padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
-        <div style={{ backgroundColor: '#FEE2E2', border: '1.5px solid #FCA5A5', borderRadius: '14px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-          <Icon name="alert" size={16} color="#DC2626" /><span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: '700', color: '#991B1B' }}>In a life-threatening emergency, always call 999 or 112 first.</span>
+      <div style={{ padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box' }}>
+        <div style={{ backgroundColor: '#FEE2E2', border: '1.5px solid #FCA5A5', borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+          <Icon name="alert" size={16} color="#DC2626" /><span style={{ fontSize: isMobile ? '11.5px' : '13px', fontWeight: '700', color: '#991B1B' }}>In a life-threatening emergency, always call 999 or 112 first.</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
-          <a href="tel:999" style={{ textDecoration: 'none', backgroundColor: '#DC2626', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isSmallPhone ? '1fr 1fr' : isMobile ? '1fr 1fr' : 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
+          <a href="tel:999" style={{ textDecoration: 'none', backgroundColor: '#DC2626', borderRadius: '16px', padding: isMobile ? '14px' : '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box' }}>
             <Icon name="phone" size={20} color="#FFFFFF" /><span style={{ fontSize: '13.5px', fontWeight: '800', color: '#FFFFFF' }}>Call Now</span><span style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.85)', fontWeight: '600' }}>999/112</span>
           </a>
-          <div onClick={() => showToast('Finding clinics near you…', 'info')} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+          <div onClick={() => showToast('Finding clinics near you…', 'info')} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: isMobile ? '14px' : '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
             <Icon name="pin" size={20} color="#DC2626" /><span style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Find Nearest Clinic</span>
           </div>
-          <div onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); handleChatNow(counsellors[1]); }} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
+          <div onClick={() => { openCounsellorHub(); setCurrentView('counsellor'); handleChatNow(counsellors[1]); }} style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', padding: isMobile ? '14px' : '18px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.04)', boxSizing: 'border-box' }}>
             <Icon name="chat" size={20} color="#DC2626" /><span style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A' }}>Crisis Chat</span>
           </div>
         </div>
         <h4 style={{ fontSize: '13.5px', fontWeight: '800', color: '#1A1A1A', margin: '0 0 12px 0' }}>Emergency Contacts</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
           {emergencyContacts.map(c => (
-            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: '14px 18px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', boxSizing: 'border-box' }}>
+            <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '14px', backgroundColor: '#FFFFFF', borderRadius: '16px', padding: isMobile ? '12px 14px' : '14px 18px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', boxSizing: 'border-box' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: `${c.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name={c.icon} size={17} color={c.color} /></div>
               <div style={{ flex: 1, minWidth: 0 }}><p style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#1A1A1A' }}>{c.name}</p><p style={{ margin: '1px 0 0 0', fontSize: '15px', fontWeight: '800', color: c.color }}>{c.number}</p><p style={{ margin: '1px 0 0 0', fontSize: '11.5px', color: '#999999', fontWeight: '600' }}>{c.hours}</p></div>
               <a href={`tel:${c.number.replace(/[^\d]/g, '')}`} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: `${c.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.color, textDecoration: 'none', flexShrink: 0 }}><Icon name="phone" size={16} color={c.color} /></a>
@@ -2297,11 +2304,11 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {crisisTopics.map(topic => (
             <div key={topic.id} style={{ backgroundColor: '#FFFFFF', borderRadius: '14px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-              <div onClick={() => setOpenCrisisTopic(openCrisisTopic === topic.id ? null : topic.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 18px', cursor: 'pointer' }}>
+              <div onClick={() => setOpenCrisisTopic(openCrisisTopic === topic.id ? null : topic.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', cursor: 'pointer' }}>
                 <Icon name={topic.icon} size={16} color="#DC2626" /><span style={{ flex: 1, fontSize: '13.5px', fontWeight: '700', color: '#1A1A1A' }}>{topic.label}</span>
                 <span style={{ display: 'flex', transform: openCrisisTopic === topic.id ? 'rotate(90deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}><Icon name="arrow-left" size={13} color="#999999" /></span>
               </div>
-              {openCrisisTopic === topic.id && <div style={{ padding: '0 18px 16px 18px' }}><p style={{ margin: 0, fontSize: '12.5px', color: '#555555', lineHeight: '1.55', textAlign: 'justify' }}>{topic.content}</p></div>}
+              {openCrisisTopic === topic.id && <div style={{ padding: '0 16px 16px 16px' }}><p style={{ margin: 0, fontSize: '12.5px', color: '#555555', lineHeight: '1.55', textAlign: isMobile ? 'left' : 'justify' }}>{topic.content}</p></div>}
             </div>
           ))}
         </div>
@@ -2315,16 +2322,16 @@ export default function App() {
       const t = selectedTopic;
       return (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box' }}>
             <button onClick={() => setSelectedTopic(null)} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
-            <h2 style={{ fontSize: isMobile ? '17px' : '19px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>{t.label}</h2>
+            <h2 style={{ fontSize: isMobile ? '16px' : '19px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>{t.label}</h2>
           </div>
-          <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
-            <div style={{ borderRadius: '18px', background: t.gradient, padding: '28px 24px', color: '#FFFFFF', marginBottom: '18px' }}>
+          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', boxSizing: 'border-box' }}>
+            <div style={{ borderRadius: '18px', background: t.gradient, padding: isMobile ? '22px 20px' : '28px 24px', color: '#FFFFFF', marginBottom: '18px' }}>
               <Icon name={t.icon} size={28} color="#FFFFFF" /><h3 style={{ margin: '10px 0 4px 0', fontSize: '19px', fontWeight: '800' }}>{t.label}</h3><p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>{t.subtitle}</p>
             </div>
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
-              <p style={{ margin: 0, fontSize: '13.5px', color: '#444444', lineHeight: '1.65', textAlign: 'justify' }}>{t.body}</p>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', padding: isMobile ? '18px' : '22px', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+              <p style={{ margin: 0, fontSize: '13.5px', color: '#444444', lineHeight: '1.65', textAlign: isMobile ? 'left' : 'justify' }}>{t.body}</p>
             </div>
           </div>
         </div>
@@ -2332,11 +2339,11 @@ export default function App() {
     }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box', backgroundColor: '#FAF5FF' }} className="no-scrollbar">
-        <div style={{ padding: isMobile ? '16px 16px' : '20px 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ padding: isMobile ? '14px 14px' : '20px 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button onClick={() => setCurrentView('dashboard')} style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: themeColors.purple, boxShadow: '0 2px 6px rgba(0,0,0,0.06)', flexShrink: 0 }}><Icon name="arrow-left" size={15} color={themeColors.purple} /></button>
-          <div><h2 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>Explore Topics</h2><p style={{ fontSize: isMobile ? '11px' : '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' }}>Learn · Grow · Be informed</p></div>
+          <div><h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: themeColors.purple, margin: 0 }}>Explore Topics</h2><p style={{ fontSize: isMobile ? '10.5px' : '12.5px', color: '#A56BC4', margin: 0, fontWeight: '500' }}>Learn · Grow · Be informed</p></div>
         </div>
-        <div style={{ padding: isMobile ? '0 16px 16px 16px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' }}>
+        <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 32px 32px 32px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '18px', boxSizing: 'border-box' }}>
           {exploreTopics.map(t => (
             <div key={t.id} onClick={() => setSelectedTopic(t)} style={{ backgroundColor: '#FFFFFF', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)', cursor: 'pointer' }}>
               <div style={{ background: t.gradient, padding: '22px 20px', position: 'relative', minHeight: '70px', display: 'flex', alignItems: 'flex-start', boxSizing: 'border-box' }}>
@@ -2465,7 +2472,7 @@ export default function App() {
           <div style={styles.authCardWrapper}>
             <div style={styles.authMainCard}>
               <h2 style={styles.authCardTitle}>Reset your password</h2>
-              <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 16px 0', lineHeight: '1.4', textAlign: 'justify' }}>Enter your email address and we'll send you a link to reset your password.</p>
+              <p style={{ fontSize: '12.5px', color: '#666666', margin: '0 0 16px 0', lineHeight: '1.4', textAlign: isMobile ? 'left' : 'justify' }}>Enter your email address and we'll send you a link to reset your password.</p>
               <form onSubmit={e => { e.preventDefault(); showToast('Reset link sent — check your inbox.', 'success'); }}>
                 <div style={styles.inputGroup}><label style={styles.inputLabel}>Email Address</label><input type="email" placeholder="you@example.com" style={styles.inputField} required /></div>
                 <button type="submit" style={styles.authSubmitBtn}>Send Reset Link</button>
@@ -2481,11 +2488,11 @@ export default function App() {
             <div style={{ ...styles.authMainCard, maxWidth: '480px', textAlign: 'left' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '800', color: themeColors.purple, margin: '0 0 12px 0' }}>About Big Sister</h2>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>The Platform</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: 'justify' }}>Big Sister is a free, private platform that gives teenage girls in Uganda access to reproductive health information, professional counselling, and tangible support like sanitary pads, school fees, and food assistance.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: isMobile ? 'left' : 'justify' }}>Big Sister is a free, private platform that gives teenage girls in Uganda access to reproductive health information, professional counselling, and tangible support like sanitary pads, school fees, and food assistance.</p>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>Our Core Mission</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: 'justify' }}>To reduce teenage pregnancy rates in Uganda by giving every girl easy, private access to health education, counselling, and the economic support she needs to stay in school and make safe decisions.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 8px 0', textAlign: isMobile ? 'left' : 'justify' }}>To reduce teenage pregnancy rates in Uganda by giving every girl easy, private access to health education, counselling, and the economic support she needs to stay in school and make safe decisions.</p>
               <h4 style={{ color: '#1A1A1A', margin: '8px 0 2px 0', fontSize: '14px' }}>Development Team</h4>
-              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 12px 0', textAlign: 'justify' }}>Built by Computing students at Uganda Christian University, reviewed by Mr. Kisomose Tony.</p>
+              <p style={{ color: '#555555', fontSize: '12.5px', lineHeight: '1.4', margin: '0 0 12px 0', textAlign: isMobile ? 'left' : 'justify' }}>Built by Computing students at Uganda Christian University, reviewed by Mr. Kisomose Tony.</p>
               <div style={{ borderTop: '1px solid #EAEAEA', paddingTop: '10px', marginTop: '12px', fontSize: '12.5px' }}>
                 <a href="mailto:info@bigsister.ucu.ac.ug" style={{ color: themeColors.purple, fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon name="mail" size={14} color={themeColors.purple} /> info@bigsister.ucu.ac.ug</a>
               </div>
@@ -2545,6 +2552,7 @@ export default function App() {
         .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         body { margin: 0; overflow: hidden; }
+        html { -webkit-text-size-adjust: 100%; }
       `}</style>
 
       {toast && (
